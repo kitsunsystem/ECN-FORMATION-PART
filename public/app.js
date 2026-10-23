@@ -9,6 +9,7 @@
   const key = s => norm(s).replace(/[^a-z]/g, '');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const fine = matchMedia('(pointer: fine)').matches;
+  const lite = matchMedia('(max-width: 980px), (pointer: coarse)').matches; // mobile/tablette : animations allégées
   const G = window.gsap;
   const ST = window.ScrollTrigger;
   const Flip = window.Flip;
@@ -183,6 +184,7 @@
       </button>`;
     }).join('');
     $('#marquee').innerHTML = [...CATS, ...CATS].map(c => `<span>${esc(c)}</span><i></i>`).join('');
+    $('#fCat').insertAdjacentHTML('beforeend', CATS.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join(''));
     $('#catChips').innerHTML = `<button class="chip is-active" data-chip="">Toutes les catégories</button>` +
       CATS.map(c => `<button class="chip" data-chip="${esc(c)}">${esc(c)}<small></small></button>`).join('');
   }
@@ -275,10 +277,14 @@
       b.setAttribute('aria-pressed', on);
       if (anim) G.fromTo(b, { scale: .6 }, { scale: 1, duration: .7, ease: 'elastic.out(1,.4)' });
     });
-    $('#favCount').textContent = favs.size;
+    setFavCount();
     $$('[data-course-fav]').forEach(b => { b.textContent = on ? '♥ Dans vos favoris' : '♡ Ajouter aux favoris'; });
     toast(on ? 'Ajoutée à vos favoris' : 'Retirée de vos favoris');
     if (view === 'favoris') renderFavs();
+  }
+  function setFavCount() {
+    $('#favCount').textContent = $('#favCountM').textContent = favs.size;
+    $('#favCountM').hidden = !favs.size;
   }
   function renderFavs() {
     const list = [...favs].map(id => COURSES[id]).filter(Boolean);
@@ -382,7 +388,7 @@
       G.fromTo(el, { clipPath: from }, { clipPath: 'inset(0px 0px 0px 0px round 0px)', duration: 1, ease: 'expo.inOut' });
       G.fromTo('#courseMedia > *', { scale: 1.5 }, { scale: 1.1, duration: 1.8, ease: 'expo.out' });
       G.fromTo('.course-head > *', { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: .06, delay: .45, ease: 'expo.out' });
-      G.fromTo('.course-progress', { x: 60, opacity: 0, rotateY: -25 }, { x: 0, opacity: 1, rotateY: 0, duration: 1.1, delay: .6, ease: 'expo.out' });
+      G.fromTo('.course-progress', { x: lite ? 0 : 60, y: lite ? 30 : 0, opacity: 0, rotateY: lite ? 0 : -25 }, { x: 0, opacity: 1, rotateY: 0, duration: 1.1, delay: .6, ease: 'expo.out' });
       G.fromTo('.tabs, .tab-panels', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: .75, ease: 'expo.out' });
     }
     $('[data-close-course]').focus({ preventScroll: true });
@@ -471,8 +477,8 @@
     lock(true);
     if (anim) {
       G.fromTo(m.querySelector('.modal-backdrop'), { opacity: 0 }, { opacity: 1, duration: .5 });
-      G.fromTo(m.querySelector('.player-box, .upgrade-box'), { y: 80, scale: .92, rotateX: 14, opacity: 0, transformPerspective: 1200 }, { y: 0, scale: 1, rotateX: 0, opacity: 1, duration: .9, ease: 'expo.out' });
-      G.fromTo(m.querySelectorAll('.plan'), { y: 50, opacity: 0, rotateY: -20 }, { y: 0, opacity: 1, rotateY: 0, duration: 1, stagger: .08, delay: .15, ease: 'expo.out' });
+      G.fromTo(m.querySelector('.player-box, .upgrade-box'), { y: lite ? 40 : 80, scale: .92, rotateX: lite ? 0 : 14, opacity: 0, transformPerspective: 1200 }, { y: 0, scale: 1, rotateX: 0, opacity: 1, duration: .9, ease: 'expo.out' });
+      G.fromTo(m.querySelectorAll('.plan'), { y: lite ? 24 : 50, opacity: 0, rotateY: lite ? 0 : -20 }, { y: 0, opacity: 1, rotateY: 0, duration: 1, stagger: .08, delay: .15, ease: 'expo.out' });
     }
     m.querySelector('.close-btn').focus({ preventScroll: true });
   }
@@ -521,11 +527,11 @@
       vt.ready.then(() => {
         const r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
         root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${r}px at ${x}px ${y}px)`] },
-          { duration: 1100, easing: 'cubic-bezier(.76,0,.24,1)', pseudoElement: '::view-transition-new(root)' });
+          { duration: lite ? 700 : 1100, easing: 'cubic-bezier(.76,0,.24,1)', pseudoElement: '::view-transition-new(root)' });
       }).catch(() => {});
     } else apply();
     window.dispatchEvent(new CustomEvent('ecn:tier', { detail: t }));
-    if (anim) G.fromTo('.pass', { rotateY: 0 }, { rotateY: 360, duration: 1.6, ease: 'expo.inOut', clearProps: 'transform' });
+    if (anim) G.fromTo('.pass', { scale: .94 }, { scale: 1, duration: .9, ease: 'expo.out', clearProps: 'transform' });
     toast(TIERS[t].toast);
   }
 
@@ -547,9 +553,10 @@
     else if (target === 0) scrollTo({ top: 0, behavior: immediate ? 'auto' : 'smooth' });
     else $(target).scrollIntoView({ behavior: 'smooth' });
   };
+  const setNavActive = name => $$('.nav-links button, .tabbar button').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
   function go(name) {
     const target = name === 'catalogue' ? 'dashboard' : name;
-    $$('.nav-links button').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
+    setNavActive(name);
     const after = () => { if (name === 'catalogue') scrollToEl('#catalog'); };
     window.dispatchEvent(new CustomEvent('ecn:view', { detail: target }));
     if (target === view) { if (name === 'dashboard') scrollToEl(0); after(); return; }
@@ -612,8 +619,10 @@
     state.cat = cat;
     state.limit = 24;
     $$('.chip').forEach(ch => ch.classList.toggle('is-active', ch.dataset.chip === cat));
+    $('#fCat').value = cat;
     applyFilters();
   }
+  $('#fCat').addEventListener('change', e => setChip(e.target.value));
   $('#catChips').addEventListener('click', e => { const ch = e.target.closest('.chip'); if (ch) setChip(ch.dataset.chip); });
   $('#fLevel').addEventListener('change', e => { state.level = e.target.value; applyFilters(); });
   $('#fDur').addEventListener('change', e => { state.dur = e.target.value; applyFilters(); });
@@ -628,6 +637,7 @@
     state.cat = '';
     state.limit = 24;
     $$('.chip').forEach(ch => ch.classList.toggle('is-active', ch.dataset.chip === ''));
+    $('#fCat').value = '';
     applyFilters();
     scrollToEl('#catalog');
   });
@@ -685,7 +695,7 @@
 
   /* ---------- Motion : Lenis, curseur, aimants, reveals ---------- */
   let lenis = null;
-  if (anim && window.Lenis) {
+  if (anim && window.Lenis && !lite) {
     lenis = new window.Lenis({ lerp: .085, smoothWheel: true });
     lenis.on('scroll', ST.update);
     G.ticker.add(t => lenis.raf(t * 1000));
@@ -740,25 +750,30 @@
   }
 
   function reveals() {
-    $$('.block-head .split').forEach(h => G.from(h.querySelectorAll('.w > *'), { yPercent: 115, rotate: 4, duration: 1.3, stagger: .07, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 88%' } }));
-    $$('.block-head .eyebrow, .result-count, .rail-nav').forEach(e => G.from(e, { opacity: 0, x: -30, duration: 1.1, ease: 'expo.out', scrollTrigger: { trigger: e, start: 'top 92%' } }));
-    batchReveal('.cat', { y: 100, rotateX: -45, transformPerspective: 900 });
-    batchReveal('#grid .card', { y: 90, rotateX: -25, scale: .94, transformPerspective: 1200 });
-    batchReveal('.perk', { y: 60 });
-    batchReveal('.filters, .upsell-card', { y: 50 });
-    G.from('.resume', { x: 140, opacity: 0, duration: 1.3, stagger: .08, ease: 'expo.out', scrollTrigger: { trigger: '#resumeRail', start: 'top 90%' } });
+    const tilt = !lite; // pas de rotations 3D sur mobile : elles font scintiller icônes et logos
+    $$('.block-head .split').forEach(h => G.from(h.querySelectorAll('.w > *'), { yPercent: 115, rotate: tilt ? 4 : 0, duration: lite ? .9 : 1.3, stagger: .06, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 90%' } }));
+    $$('.block-head .eyebrow, .result-count, .rail-nav').forEach(e => G.from(e, { opacity: 0, x: -24, duration: 1, ease: 'expo.out', scrollTrigger: { trigger: e, start: 'top 94%' } }));
+    batchReveal('.cat', tilt ? { y: 100, rotateX: -45, transformPerspective: 900 } : { y: 30 });
+    if (tilt) batchReveal('#grid .card', { y: 90, rotateX: -25, scale: .94, transformPerspective: 1200 }); // mobile : cartes affichées direct, pas de trou en défilement rapide
+    batchReveal('.perk', { y: lite ? 30 : 60 });
+    batchReveal('.filters, .upsell-card', { y: lite ? 24 : 50 });
+    G.from('.resume', { x: lite ? 60 : 140, opacity: 0, duration: lite ? .9 : 1.3, stagger: .08, ease: 'expo.out', scrollTrigger: { trigger: '#resumeRail', start: 'top 92%' } });
+    if (lite) return;
     G.to('.hero-copy', { yPercent: -18, opacity: .15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
     G.to('.pass-wrap', { y: -160, rotateX: 28, scale: .9, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
     G.fromTo('.marquee', { opacity: .3 }, { opacity: 1, scrollTrigger: { trigger: '.marquee', start: 'top bottom', end: 'top 60%', scrub: true } });
   }
 
+  // l'onglet actif suit le défilement entre l'accueil et le catalogue
+  if (anim) ST.create({ trigger: '#catalog', start: 'top 55%', end: 'bottom 45%', onToggle: st => { if (view === 'dashboard') setNavActive(st.isActive ? 'catalogue' : 'dashboard'); } });
+
   function intro() {
     const tl = G.timeline({ paused: true, defaults: { ease: 'expo.out' } });
-    tl.from('.nav', { y: -100, opacity: 0, duration: 1.4 }, 0)
-      .from('.hero h1 .w > *', { yPercent: 120, rotate: 5, duration: 1.5, stagger: .06 }, .05)
+    tl.from('.nav, .tabbar', { opacity: 0, duration: 1 }, 0)
+      .from('.hero h1 .w > *', { yPercent: 120, rotate: lite ? 0 : 5, duration: lite ? 1.1 : 1.5, stagger: .05 }, .05)
       .from('.hero .eyebrow', { y: 20, opacity: 0, duration: 1 }, .15)
       .from('.hero-sub, .search, .stats > div', { y: 50, opacity: 0, duration: 1.2, stagger: .08 }, .4)
-      .from('.pass', { rotateY: -80, rotateX: 25, y: 160, z: -300, opacity: 0, duration: 2, ease: 'expo.out', clearProps: 'transform' }, .2)
+      .from('.pass', lite ? { y: 50, opacity: 0, duration: 1.2, clearProps: 'transform' } : { rotateY: -80, rotateX: 25, y: 160, z: -300, opacity: 0, duration: 2, ease: 'expo.out', clearProps: 'transform' }, .2)
       .from('.pass-powered, .scroll-hint', { opacity: 0, duration: 1 }, 1)
       .add(countStats, .5);
     return tl;
@@ -768,7 +783,7 @@
   renderCats();
   updateTierUI();
   applyFilters(false);
-  $('#favCount').textContent = favs.size;
+  setFavCount();
   $$('.split').forEach(split);
 
   if (!anim) {

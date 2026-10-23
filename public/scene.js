@@ -9,17 +9,18 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const canvas = document.getElementById('gl');
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const small = innerWidth < 760;
+// mobile/tablette : pas de bloom, moins de géométrie, résolution et cadence réduites
+const lite = matchMedia('(max-width: 980px), (pointer: coarse)').matches;
 const G = window.gsap;
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: !small, powerPreference: 'high-performance' });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: !lite, powerPreference: lite ? 'low-power' : 'high-performance' });
 } catch {
   canvas.remove(); // pas de WebGL : le reste de la page fonctionne sans la 3D
   throw new Error('WebGL indisponible');
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio, lite ? 1.25 : 1.75));
 renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x050608, 1);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -43,17 +44,17 @@ const champagne = new THREE.MeshPhysicalMaterial({ color: 0xe9cf86, metalness: 1
 const silver = new THREE.MeshStandardMaterial({ color: 0xc3cad8, metalness: .8, roughness: .3, wireframe: true, transparent: true, opacity: .5 });
 
 const initie = new THREE.Group();
-initie.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.9, 2), silver));
+initie.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.9, lite ? 1 : 2), silver));
 initie.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 0), new THREE.MeshStandardMaterial({ color: 0x8a94a8, metalness: 1, roughness: .4, flatShading: true })));
 
-const membre = new THREE.Mesh(new THREE.TorusKnotGeometry(1.25, .4, small ? 160 : 300, small ? 24 : 48, 2, 3), gold);
+const membre = new THREE.Mesh(new THREE.TorusKnotGeometry(1.25, .4, lite ? 140 : 300, lite ? 20 : 48, 2, 3), gold);
 
 const fondateur = new THREE.Group();
 const gem = new THREE.Mesh(new THREE.OctahedronGeometry(1.45, 0), champagne);
 gem.scale.y = 1.35;
-const ringA = new THREE.Mesh(new THREE.TorusGeometry(2.5, .03, 16, 220), gold);
+const ringA = new THREE.Mesh(new THREE.TorusGeometry(2.5, .03, 12, lite ? 120 : 220), gold);
 ringA.rotation.x = 1.25;
-const ringB = new THREE.Mesh(new THREE.TorusGeometry(2.85, .02, 16, 220), champagne);
+const ringB = new THREE.Mesh(new THREE.TorusGeometry(2.85, .02, 12, lite ? 120 : 220), champagne);
 ringB.rotation.set(.5, .9, 0);
 fondateur.add(gem, ringA, ringB);
 
@@ -63,7 +64,7 @@ Object.values(OBJ).forEach(o => { o.visible = false; hero.add(o); });
 scene.add(hero);
 
 /* ---------- Galaxie de particules ---------- */
-const N = small ? 1400 : 3600;
+const N = lite ? 900 : 3600;
 const pos = new Float32Array(N * 3), seed = new Float32Array(N);
 for (let i = 0; i < N; i++) {
   const r = 2.6 + Math.pow(Math.random(), 1.6) * 13;
@@ -100,12 +101,16 @@ const galaxy = new THREE.Points(pGeo, pMat);
 galaxy.rotation.x = .38;
 scene.add(galaxy);
 
-/* ---------- Post-traitement ---------- */
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .45, .5, .86);
-composer.addPass(bloom);
-composer.addPass(new OutputPass());
+/* ---------- Post-traitement (ordinateur uniquement) ---------- */
+let composer = null, bloom = null;
+if (!lite) {
+  composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), .45, .5, .86);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+}
+const draw = () => (composer ? composer.render() : renderer.render(scene, camera));
 
 /* ---------- Thèmes ---------- */
 const THEME = {
@@ -120,14 +125,15 @@ function applyTheme(t, instant) {
   const c = new THREE.Color(T.color), rc = new THREE.Color(T.rim);
   if (instant || !G) {
     pMat.uniforms.uColor.value.copy(c); rim.color.copy(rc);
-    bloom.strength = T.bloom; renderer.toneMappingExposure = T.exposure; pMat.uniforms.uAlpha.value = T.alpha;
+    if (bloom) bloom.strength = T.bloom;
+    renderer.toneMappingExposure = T.exposure; pMat.uniforms.uAlpha.value = T.alpha;
     return;
   }
-  G.to(pMat.uniforms.uColor.value, { r: c.r, g: c.g, b: c.b, duration: 1.6, ease: 'power2.inOut' });
-  G.to(rim.color, { r: rc.r, g: rc.g, b: rc.b, duration: 1.6 });
-  G.to(bloom, { strength: T.bloom, duration: 1.6 });
-  G.to(renderer, { toneMappingExposure: T.exposure, duration: 1.6 });
-  G.to(pMat.uniforms.uAlpha, { value: T.alpha, duration: 1.6 });
+  G.to(pMat.uniforms.uColor.value, { r: c.r, g: c.g, b: c.b, duration: 1.4, ease: 'power2.inOut' });
+  G.to(rim.color, { r: rc.r, g: rc.g, b: rc.b, duration: 1.4 });
+  if (bloom) G.to(bloom, { strength: T.bloom, duration: 1.4 });
+  G.to(renderer, { toneMappingExposure: T.exposure, duration: 1.4 });
+  G.to(pMat.uniforms.uAlpha, { value: T.alpha, duration: 1.4 });
 }
 active.visible = true;
 applyTheme(tier, true);
@@ -141,16 +147,16 @@ function swap(t) {
   tier = t;
   applyTheme(t);
   if (!G || reduce) { prev.visible = false; next.visible = true; render(); return; }
-  G.to(prev.scale, { x: 0, y: 0, z: 0, duration: .7, ease: 'back.in(2)', onComplete: () => { prev.visible = false; prev.scale.set(1, 1, 1); } });
-  G.to({ v: 0 }, { v: 1, duration: 1.6, ease: 'expo.inOut', onUpdate() { spin = this.targets()[0].v * Math.PI * 2; } });
+  G.to(prev.scale, { x: 0, y: 0, z: 0, duration: .6, ease: 'back.in(2)', onComplete: () => { prev.visible = false; prev.scale.set(1, 1, 1); } });
+  G.to({ v: 0 }, { v: 1, duration: 1.4, ease: 'expo.inOut', onUpdate() { spin = this.targets()[0].v * Math.PI * 2; } });
   next.visible = true;
   next.scale.set(0, 0, 0);
-  G.to(next.scale, { x: 1, y: 1, z: 1, duration: 1.8, delay: .55, ease: 'elastic.out(1, .45)' });
+  G.to(next.scale, { x: 1, y: 1, z: 1, duration: lite ? 1 : 1.8, delay: .5, ease: lite ? 'expo.out' : 'elastic.out(1, .45)' });
 }
 
 /* ---------- Interaction & boucle ---------- */
-let mx = 0, my = 0, sx = 0, sy = 0, paused = false, onDash = true, dashK = 1;
-addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
+let mx = 0, my = 0, sx = 0, sy = 0, paused = false, onDash = true;
+if (!lite) addEventListener('pointermove', e => { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; });
 addEventListener('ecn:tier', e => swap(e.detail));
 addEventListener('ecn:pause', e => { paused = e.detail; if (!paused) loop(); });
 addEventListener('ecn:view', e => { onDash = e.detail === 'dashboard'; });
@@ -158,29 +164,34 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
-  composer.setSize(innerWidth, innerHeight);
-  render(performance.now());
+  if (composer) composer.setSize(innerWidth, innerHeight);
+  render();
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) loop(); });
 
+// L'objet est accroché derrière la carte de pass : il suit sa position à l'écran
+const anchor = document.querySelector('.pass-wrap');
+const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
 const clock = new THREE.Clock();
-let raf = 0;
-function render(now) {
+function render() {
   const t = clock.getElapsedTime();
   const s = scrollY / innerHeight;
   sx += (mx - sx) * .05;
   sy += (my - sy) * .05;
-  dashK += ((onDash ? 1 : 0) - dashK) * .05;
-  const wide = innerWidth > 980;
 
-  // l'objet vit derrière la carte de pass, puis s'éloigne au scroll
-  const hs = Math.min(s, 2.2);
-  hero.position.set((wide ? 3.05 : 0) - hs * (wide ? .8 : 0), (wide ? .1 : -1.4) + hs * 3.2, -hs * 3 - (1 - dashK) * 6);
-  hero.rotation.y = sx * .7 + spin;
-  hero.rotation.x = sy * .5;
-  active.rotation.x = t * .18 + s * .8;
-  active.rotation.y = t * .26 + s * 1.2;
-  if (active === fondateur) { ringA.rotation.z = t * .5; ringB.rotation.z = -t * .35; gem.rotation.y = t * .6; }
+  const r = anchor.getBoundingClientRect();
+  const show = onDash && r.width > 0 && r.bottom > -200 && r.top < innerHeight + 200;
+  hero.visible = show;
+  if (show) {
+    const halfW = halfH * camera.aspect;
+    hero.position.set(((r.left + r.width / 2) / innerWidth - .5) * 2 * halfW, -((r.top + r.height / 2) / innerHeight - .5) * 2 * halfH, 0);
+    hero.scale.setScalar(Math.min(1, (r.width / innerWidth) * 2 * halfW / 3.6));
+    hero.rotation.y = sx * .7 + spin;
+    hero.rotation.x = sy * .5;
+    active.rotation.x = t * .18 + s * .8;
+    active.rotation.y = t * .26 + s * 1.2;
+    if (active === fondateur) { ringA.rotation.z = t * .5; ringB.rotation.z = -t * .35; gem.rotation.y = t * .6; }
+  }
 
   galaxy.rotation.y = t * .025 + s * .35 + sx * .15;
   galaxy.position.y = s * 1.5;
@@ -188,12 +199,15 @@ function render(now) {
   camera.position.y = -sy * .4;
   camera.lookAt(0, 0, 0);
   pMat.uniforms.uTime.value = t;
-  composer.render();
+  draw();
 }
-function loop() {
+
+let raf = 0, last = 0;
+function loop(now) {
   cancelAnimationFrame(raf);
   if (paused || document.hidden) return;
-  render(performance.now());
+  // ~30 i/s sur mobile : largement assez pour un fond lent ; un appel direct (sans now) rend tout de suite
+  if (now === undefined || !lite || now - last > 32) { last = now ?? performance.now(); render(); }
   if (!reduce) raf = requestAnimationFrame(loop);
 }
 loop();

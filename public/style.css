@@ -503,44 +503,96 @@ html[data-tier="fondateur"] .badge.vip { display: inline-block; }
 /* View Transitions : révélation circulaire au changement de pack */
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 
+/* ---------- Barre d'onglets mobile (cachée sur ordinateur) ---------- */
+.tabbar, .cat-field { display: none; }
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
   .nav-links button { padding: 9px 11px; font-size: 13px; }
   .tier-label { display: none; }
 }
 @media (max-width: 980px) {
-  :root { --nav-h: 120px; }
-  .nav { flex-wrap: wrap; height: auto; padding: 8px 10px 8px 14px; border-radius: 24px; row-gap: 8px; }
-  .nav-links { order: 3; width: 100%; margin: 0; overflow-x: auto; scrollbar-width: none; }
-  .nav-links::-webkit-scrollbar { display: none; }
+  :root { --nav-h: 68px; --tab-h: 66px; }
+  .nav { top: calc(8px + env(safe-area-inset-top)); left: 12px; right: 12px; height: 56px; gap: 10px; padding: 0 6px 0 10px; }
+  .nav-links, .avatar { display: none; }
   .tier-switch { margin-left: auto; }
-  .avatar { display: none; }
-  .hero { grid-template-columns: 1fr; padding-top: calc(var(--nav-h) + 40px); }
+  .tabbar { position: fixed; z-index: 100; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom)); height: var(--tab-h); display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding: 6px; border-radius: 22px;
+    background: rgba(7, 9, 14, .82); border: 1px solid var(--line); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); box-shadow: 0 -6px 30px rgba(0, 0, 0, .45); }
+  .tabbar button { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 16px; font-size: 11px; font-weight: 500; color: var(--tx-3); transition: color .25s, background .25s; }
+  .tabbar svg { width: 22px; height: 22px; stroke-width: 1.8; }
+  .tabbar button.is-active { color: var(--a-l); background: rgba(var(--a-rgb), .13); }
+  .tab-badge { position: absolute; top: 5px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 99px; font-style: normal; font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; color: #120d02; background: var(--grad); }
+  .tab-badge[hidden] { display: none; }
+  .toast { bottom: calc(var(--tab-h) + 22px + env(safe-area-inset-bottom)); }
+  .foot { margin-top: 70px; padding-bottom: calc(var(--tab-h) + 40px + env(safe-area-inset-bottom)); }
+  .hero { grid-template-columns: 1fr; min-height: 0; gap: 44px; padding-top: calc(var(--nav-h) + 40px); padding-bottom: 30px; }
+  .scroll-hint, .rail-nav, .chips { display: none; }
   .pass-wrap { width: min(400px, 100%); }
-  .stats { grid-template-columns: repeat(2, auto); }
-  .upsell-card { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); gap: 18px 24px; }
+  .upsell-card { grid-template-columns: 1fr; gap: 18px; }
   .upsell-stack { display: none; }
   .perks { grid-template-columns: repeat(2, 1fr); }
   .help-grid, .about-grid, .reviews { grid-template-columns: 1fr; }
   .help-cta { position: relative; top: 0; }
-  .course-hero { grid-template-columns: 1fr; padding-top: 90px; }
+  .course-hero { grid-template-columns: 1fr; min-height: 0; padding-top: 90px; }
   .plans { grid-template-columns: 1fr; }
+  .cat-field { display: grid; }
+  .filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .search-mini, .cat-field, .sort-field, .toggle { grid-column: 1 / -1; }
+  .search-mini { order: -1; }
+  .filters { margin-bottom: 22px; }
+  .field select, .field input { padding-top: 11px; padding-bottom: 11px; }
+  .field select, .field input { min-width: 0; width: 100%; }
+  .close-btn { top: calc(12px + env(safe-area-inset-top)); right: 12px; }
 }
 @media (max-width: 560px) {
   .brand span { display: none; }
-  .tier-switch button { padding: 7px 10px; font-size: 12px; }
+  .tier-switch button { padding: 8px 11px; font-size: 12.5px; }
+  .hero h1 { font-size: clamp(32px, 9.4vw, 44px); }
   .search { padding-left: 14px; }
   .search .btn { padding: 12px 14px; font-size: 14px; }
-  .search input { font-size: 15px; }
-  .tier-switch { margin-left: auto; }
-  .nav { gap: 10px; }
-  .grid { grid-template-columns: 1fr; }
+  /* cartes en liste compacte : vignette à gauche, texte à droite */
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+  .card-in { flex-direction: row; min-height: 128px; }
+  .card-thumb { flex: 0 0 116px; aspect-ratio: auto; border-radius: calc(var(--r) - 1px) 0 0 calc(var(--r) - 1px); }
+  .card-thumb::after { display: none; }
+  .card-badges { top: 8px; left: 8px; right: auto; }
+  .card-badges .badge { display: none; }
+  .fav { width: 30px; height: 30px; margin: 0; }
+  .fav svg { width: 14px; height: 14px; }
+  .fallback svg { width: 40px; height: 40px; }
+  .fallback b, .lock span { display: none; }
+  .lock-ico { width: 38px; height: 38px; }
+  .lock-ico svg { width: 17px; height: 17px; }
+  .card-body { min-width: 0; gap: 5px; padding: 12px 14px; }
+  .card-cat { font-size: 10px; }
+  .card h3 { font-size: 14.5px; }
+  .card-meta { gap: 8px; font-size: 11.5px; padding-top: 2px; }
+  .card-meta span:nth-child(3) { display: none; }
   .cats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .cat { min-height: 150px; padding: 16px; }
+  .cat { min-height: 140px; padding: 16px; gap: 16px; }
   .perks { grid-template-columns: 1fr; }
-  .field { flex: 1 1 140px; }
-  .field select { min-width: 0; width: 100%; }
-  .scroll-hint { display: none; }
+  .course-hero { padding-left: 16px; padding-right: 16px; }
+}
+
+/* Mobile & tactile : rendu à plat, sans couches 3D ni flous en cascade (évite le scintillement des logos et icônes) */
+@media (max-width: 980px), (pointer: coarse) {
+  button, a, .card, label { -webkit-tap-highlight-color: transparent; }
+  .grain { display: none; }
+  .aurora { filter: blur(60px); }
+  .aurora i, .grad { animation: none; }
+  .card-in, .cat, .pass { transform-style: flat; transform: none; }
+  .card-badges, .card-body, .cat-ico, .cat-text, .pass-top, .pass-chip, .pass-name, .pass-desc, .pass-bottom { transform: none; }
+  .cat, .badge, .fav, .lock, .course-meta li, .course-progress, .search { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .cat { background: rgba(14, 18, 28, .92); }
+  .badge, .fav { background: rgba(5, 6, 8, .78); }
+  .lock { background: linear-gradient(180deg, rgba(5, 6, 8, .45), rgba(5, 6, 8, .86)); }
+  .search { background: rgba(12, 15, 23, .92); }
+  .course-progress { background: rgba(12, 15, 23, .94); }
+  .fallback svg { filter: none; }
+  .card-thumb img, .card:hover .card-thumb img { transform: none; transition: none; }
+  .card:hover .card-in { box-shadow: none; }
+  .card-glare, .cat::before { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
