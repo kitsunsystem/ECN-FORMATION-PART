@@ -12,7 +12,7 @@ Le sélecteur **Démo** en haut à droite simule le pack du membre :
 | **Membre** (Golden Card) | Les 162 formations | Or 24K, nœud d'or liquide 3D, bloom |
 | **Cercle Fondateur** | Les 162 formations, plus le badge « Avant-première » | Champagne et platine, gemme 3D en orbite |
 
-La liste des formations Initié se règle dans `data.js` (`i: 1`).
+La liste des formations Initié se règle dans `public/data.js` (`i: 1`).
 
 ## Contenu
 
@@ -27,14 +27,16 @@ La liste des formations Initié se règle dans `data.js` (`i: 1`).
 Les modules ES exigent un serveur HTTP (un double-clic sur `index.html` ne suffit pas) :
 
 ```bash
-python -m http.server 5520
+python -m http.server 5520 --directory public
 ```
 
 Puis ouvrir http://localhost:5520.
 
 ## Mettre en ligne
 
-Site 100 % statique : GitHub Pages (Settings → Pages → branche `main`, dossier `/`) ou Cloudflare Pages, comme le site principal.
+Site 100 % statique, tout est dans `public/`.
+
+Cloudflare Workers (config dans `wrangler.jsonc`) : connecter le repo, laisser la commande de build vide, commande de déploiement `npx wrangler deploy`. Chaque push sur `main` redéploie.
 
 ## Stack
 

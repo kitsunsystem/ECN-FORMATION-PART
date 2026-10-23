@@ -1,0 +1,8 @@
+// Cloudflare Workers : site 100 % statique, servi depuis public/
+{
+  "name": "ecn-formation-part",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public"
+  }
+}
