@@ -13,14 +13,27 @@ Aucune page, feuille de style ni donnée n'est servie sans session (le Worker `s
 
 Sans session, le visiteur voit `/connexion`. Le bouton « Se connecter avec ECN Group » le ramène ici après sa connexion sur ecn-group.com.
 
-| `users.pack` (actif) | Accès Formation | Thème |
-|---|---|---|
-| `initie` | 22 formations de base, le reste verrouillé | Argent |
-| `golden` | Les 162 formations | Or 24K |
-| `fondateur` | Les 162 formations + « Avant-première » | Champagne |
-| `porteur`, `none`, inactif, suspendu | Pas d'accès | — |
+| `users.pack` (actif) | Formations LE CUBE (162) | Formations ECN Membre | Thème |
+|---|---|---|---|
+| `initie` | Toutes | Aperçu verrouillé | Argent |
+| `golden` | Toutes | Accès | Or 24K |
+| `fondateur` | Toutes | Accès | Champagne |
+| `porteur`, `none`, inactif, suspendu | Pas d'accès à l'espace | — | — |
 
-Les administrateurs ECN ont l'accès Fondateur. La liste des formations Initié se règle dans `public/data.js` (`i: 1`).
+Les administrateurs ECN ont l'accès Fondateur.
+
+## Contenus
+
+- **Formations LE CUBE** (`public/data.js`, `ECN_COURSES`) : snapshot du catalogue de l'espace membre lecube.biz. Chaque carte ouvre la formation sur lecube.biz (nouvel onglet). Le membre s'y connecte avec ses identifiants LE CUBE, qui gère la progression et les attestations.
+- **Formations ECN Membre** (`public/data.js`, `ECN_MEMBRE_FORMATIONS`) : section « En construction » tant que la liste est vide. Pour ajouter une formation :
+
+```js
+window.ECN_MEMBRE_FORMATIONS = [
+  { t: 'Titre', c: 'Thème', d: '2h', l: 'Débutant', img: 'assets/ecn/visuel.webp', u: 'https://lien-de-la-formation' }
+];
+```
+
+Sans `u`, la carte affiche « bientôt disponible ». Les Initiés voient ces formations verrouillées, et un clic leur propose de passer Membre.
 
 ## Mise en production
 
@@ -51,6 +64,6 @@ npx wrangler dev
 ## Stack
 
 Cloudflare Worker + assets statiques (`public/`). Three.js 0.160, GSAP 3.12 (ScrollTrigger, Flip) et Lenis sont chargés depuis un CDN. Aucune étape de build.
-La progression et les favoris sont enregistrés dans le navigateur, séparément pour chaque membre.
+Les favoris et l'historique « Récemment consultées » sont enregistrés dans le navigateur, séparément pour chaque membre.
 
 Visuels du catalogue © LE CUBE Formations.

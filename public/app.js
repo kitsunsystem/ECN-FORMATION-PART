@@ -1,4 +1,4 @@
-/* ECN Group — Espace Formation (maquette démo) : catalogue, accès par pack, motion */
+/* ECN Group — Espace Formation : catalogue LE CUBE (tous les packs), formations ECN Membre, accès par pack, motion */
 (() => {
   'use strict';
 
@@ -17,11 +17,11 @@
   if (anim) G.registerPlugin(ST, Flip);
   const root = document.documentElement;
 
-  // Version officielle : profil injecté par le Worker après vérification du compte ECN (absent = maquette de démo)
+  // Version officielle : profil injecté par le Worker après vérification du compte ECN (absent = aperçu de démo)
   const MEMBER = window.ECN_MEMBER || null;
   const official = !!MEMBER;
   const ECN_ADHESION_URL = 'https://ecn-group.com/dashboard.html';
-  const ns = official ? `ecnf:${MEMBER.id}:` : 'ecnf:'; // progression et favoris propres à chaque membre
+  const ns = official ? `ecnf:${MEMBER.id}:` : 'ecnf:'; // favoris et historique propres à chaque membre
   const store = {
     get(k, d) { try { const v = localStorage.getItem(ns + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem(ns + k, JSON.stringify(v)); } catch { /* stockage indisponible : la page reste utilisable */ } }
@@ -29,7 +29,10 @@
 
   /* ---------- Données ---------- */
   const COURSES = (window.ECN_COURSES || []).map((c, id) => ({ ...c, id }));
+  const ECN = window.ECN_MEMBRE_FORMATIONS || [];
   const CATS = [...new Set(COURSES.map(c => c.c))].sort((a, b) => a.localeCompare(b, 'fr'));
+  // lien LE CUBE accepté seulement s'il pointe vers lecube.biz
+  const cubeUrl = c => (/^https:\/\/lecube\.biz\//.test(c.u) ? c.u : 'https://lecube.biz/');
 
   const ICONS = {
     bureautique: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
@@ -50,73 +53,24 @@
     lock: '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
     heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/></svg>',
     clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-    layers: '<svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg>',
-    chev: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
-    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor" stroke="none"/></svg>',
-    next: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>'
-  };
-
-  const CAT_DESC = {
-    bureautique: 'Maîtrisez les outils du quotidien pour gagner en efficacité : documents, tableaux, présentations et collaboration en ligne.',
-    caodao: 'Concevez, modélisez et présentez vos projets techniques avec les logiciels de référence du secteur.',
-    comptabilitepaie: 'Des règles fondamentales aux cas pratiques : sécurisez la comptabilité et la paie de votre structure.',
-    developpementpersonnel: 'Développez votre impact : communication, confiance en soi, gestion des émotions et leadership personnel.',
-    developpementweb: 'Créez des sites et applications modernes, du premier code aux frameworks professionnels.',
-    infographievideo: 'Montage, animation, graphisme : donnez vie à vos idées avec les outils créatifs des pros.',
-    langues: 'Progressez à votre rythme avec des parcours structurés par niveau, du A1 au C2.',
-    managementrh: 'Recrutez, motivez et faites grandir vos équipes avec des méthodes éprouvées.',
-    productivite: 'Organisez, automatisez et exploitez l’IA pour accomplir plus, en moins de temps.',
-    reconversion: 'Un parcours concret pour lancer une nouvelle activité ou changer de métier en confiance.',
-    securite: 'Protégez votre entreprise, vos données et vos clients grâce aux bons réflexes.',
-    ventemarketingdigital: 'Attirez, convertissez et fidélisez : les leviers de vente et de marketing digital qui fonctionnent.'
-  };
-
-  // Programme réel de la formation Outlook (snapshot LE CUBE), les autres sont générés.
-  const OUTLOOK_KEY = norm('Outlook sur le Web avec Microsoft 365');
-  const OUTLOOK = {
-    desc: 'Avec cette formation vous apprendrez à optimiser votre productivité en gérant efficacement vos emails, calendriers, contacts et tâches. Grâce à des démonstrations pratiques, vous découvrirez comment naviguer dans Microsoft 365, planifier des réunions et utiliser des outils avancés comme Bookings et Microsoft Loop pour une collaboration efficace.',
-    goals: ['Maîtriser Outlook sur le web avec Microsoft 365', 'Optimiser l’organisation et la productivité dans Microsoft 365', 'Gérer efficacement les emails, calendriers, contacts et tâches', 'Planifier des réunions et utiliser les outils intégrés', 'Explorer les fonctionnalités avancées comme Bookings et Microsoft Loop'],
-    parts: [
-      ['Introduction', ['Présentation de la formation Outlook sur le web avec Microsoft 365', 'Qu’est-ce qu’Outlook', 'Se connecter à Microsoft 365 ou à Outlook Microsoft 365', '?Test de positionnement']],
-      ['Découverte Outlook web', ['Se connecter à Microsoft 365 ou Outlook Microsoft 365', 'Se repérer dans Microsoft 365', 'Se repérer dans Outlook en ligne']],
-      ['Utilisation de Courrier', ['Envoyer et répondre à un message', 'Les différentes façons de transférer un message', 'Planifier l’envoi d’un message', 'Envoyer un fichier en pièce jointe et le partager de manière sécurisée', 'Créer et ajouter une signature à un message', 'Utiliser les accusés de lecture et de réception', 'Repérer un message avec l’indicateur ou le mettre en non lu', 'Utiliser les dossiers pour classer les emails', 'Configurer les actions rapides', 'Créer et planifier un message d’absence', 'Gérer le regroupement des messages', 'Mentionner un destinataire', 'Envoyer un message Teams à partir d’Outlook', '?Quiz de la partie 1']],
-      ['Gestion de mon planning', ['Les repères à avoir dans le calendrier Outlook', 'Planifier une réunion', 'Afficher un calendrier en disponibilité', 'Partager un calendrier']],
-      ['Planification grâce à Bookings', ['Qu’est-ce que Microsoft Bookings', 'Accéder à Bookings', 'Paramétrer une réservation', 'Partager une page de réservation personnelle', 'Créer un agenda de réservation pour une équipe', '?Quiz de la partie 2']],
-      ['Organisation de tâches avec To Do', ['Créer des tâches dans To Do', 'Organiser les tâches grâce aux groupes et aux listes', 'Ajouter les courriers avec indicateurs dans To Do', 'Partager une tâche']],
-      ['Contacts', ['Se repérer dans Contacts', 'Créer un contact', 'Créer une liste de contacts']],
-      ['Découvrir Loop', ['Qu’est-ce que Microsoft Loop', 'Créer un composant Loop à partir d’Outlook', '?Quiz de la partie 3']],
-      ['Conclusion', ['Conclusion générale']]
-    ]
+    ext: '<svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg>'
   };
 
   const TIERS = {
-    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Socle de formations de base inclus dans votre pack.', eyebrow: 'Pack Initié · Accès essentiel', toast: 'Mode Pack Initié : accès limité aux formations de base' },
-    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Vous avez accès à l’ensemble du catalogue.', eyebrow: 'Pass Illimité · Actif', toast: 'Mode Membre : accès premium à tout le catalogue' },
+    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Catalogue LE CUBE Formations inclus.', eyebrow: 'Pack Initié · Catalogue LE CUBE', toast: 'Mode Pack Initié : catalogue LE CUBE, formations ECN en aperçu' },
+    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Catalogue LE CUBE et formations ECN Membre.', eyebrow: 'Pack Membre · Accès complet', toast: 'Mode Membre : catalogue LE CUBE et formations ECN Membre' },
     fondateur: { name: 'Cercle Fondateur', tag: 'Fondateur', desc: 'Accès total, avant-premières et cercle privé.', eyebrow: 'Cercle Fondateur · Accès total', toast: 'Cercle Fondateur : accès total et thème signature' }
   };
   let tier = official ? MEMBER.tier : store.get('tier', 'membre');
   if (!TIERS[tier]) tier = official ? 'initie' : 'membre';
   root.dataset.tier = tier;
   root.classList.toggle('is-official', official);
-  const canAccess = c => tier !== 'initie' || c.i === 1;
+  const ecnOpen = () => tier !== 'initie'; // formations ECN Membre : Membre et Cercle Fondateur
 
-  // Progression démo (chapitres terminés par formation)
-  const SEED = [['Outlook sur le Web avec Microsoft 365', 2], ['Claude AI : de la découverte aux usages professionnels', 18], ['Initiation à l’Intelligence Artificielle', 35],
-    ['Maîtrisez CapCut de A à Z', 64], ['Gestion du stress', 60], ['Prompt engineering : des bases aux techniques avancées', 41],
-    ['Power BI : de débutant à expérimenté', 77], ['Adobe After Effects pour animer des vidéos avec des effets avancés', 9]];
-  const byKey = new Map(COURSES.map(c => [norm(c.t), c]));
-  const prog = store.get('prog', null) || {};
-  const order = store.get('order', null) || [];
-  const lastSeen = store.get('last', {});
-  if (!official && !store.get('prog', null)) {
-    SEED.forEach(([t, p]) => { const c = byKey.get(norm(t)); if (c) { prog[c.id] = Math.max(1, Math.round(p * c.ch / 100)); order.push(c.id); } });
-  }
-  const pct = c => Math.min(100, Math.round((prog[c.id] || 0) / c.ch * 100));
   const favs = new Set(store.get('favs', []));
-  const resumeList = () => order.map(id => COURSES[id]).filter(c => c && prog[c.id] && canAccess(c));
+  let recent = store.get('recent', []).filter(id => COURSES[id]);
 
   /* ---------- Helpers UI ---------- */
-  const ago = ts => { const d = Math.floor((Date.now() - ts) / 864e5); return d <= 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`; };
   let toastTimer;
   function toast(msg) {
     const t = $('#toast');
@@ -126,31 +80,23 @@
     toastTimer = setTimeout(() => t.classList.remove('is-on'), 2800);
   }
 
-  const ring = p => `<div class="ring" data-p="${p}"><svg viewBox="0 0 80 80"><circle class="bg" cx="40" cy="40" r="32"/><circle class="fg" cx="40" cy="40" r="32"/></svg><b>${p}%</b></div>`;
-  function animateRings(scope) {
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      $$('.ring', scope).forEach(r => { r.querySelector('.fg').style.strokeDashoffset = 201 * (1 - r.dataset.p / 100); });
-    }));
-  }
-
   const thumb = c => c.img
-    ? `<img src="assets/courses/${c.img}" alt="" loading="lazy" decoding="async">`
-    : `<div class="fallback" style="--c:${c.col}"><svg viewBox="0 0 24 24">${icon(c.c)}</svg><b>${esc(c.c)}</b></div>`;
+    ? `<img src="${c.img.includes('/') ? esc(c.img) : `assets/courses/${c.img}`}" alt="" loading="lazy" decoding="async">`
+    : `<div class="fallback" style="--c:${c.col || '#d4af37'}"><svg viewBox="0 0 24 24">${icon(c.c || '')}</svg><b>${esc(c.c || '')}</b></div>`;
 
+  // Carte LE CUBE : lien étiré vers lecube.biz (nouvel onglet), le cœur reste cliquable au-dessus
   function cardHTML(c) {
-    const p = pct(c);
-    return `<article class="card${canAccess(c) ? '' : ' is-locked'}" data-id="${c.id}" style="--c:${c.col}" tabindex="0" aria-label="${esc(c.t)}">
+    const meta = [c.l && `<span>${esc(c.l)}</span>`, c.d && `<span>${SVG.clock}${esc(c.d)}</span>`, c.r && '<span class="star">★ 5,0</span>'].filter(Boolean).join('');
+    return `<article class="card" data-id="${c.id}" style="--c:${c.col}">
       <div class="card-in">
         <div class="card-thumb">${thumb(c)}
-          <div class="card-badges">${c.id < 2 ? '<span class="badge new">Nouveau</span>' : ''}${c.id < 5 ? '<span class="badge vip">Avant-première</span>' : ''}
-            <button class="fav${favs.has(c.id) ? ' is-on' : ''}" data-fav="${c.id}" aria-pressed="${favs.has(c.id)}" aria-label="Ajouter aux favoris">${SVG.heart}</button></div>
-          <div class="lock"><div class="lock-ico">${SVG.lock}</div><span>Réservé Membre</span></div>
+          <div class="card-badges">${c.n ? '<span class="badge new">Nouveau</span>' : ''}
+            <button class="fav${favs.has(c.id) ? ' is-on' : ''}" data-fav="${c.id}" aria-pressed="${favs.has(c.id)}" aria-label="Ajouter « ${esc(c.t)} » aux favoris">${SVG.heart}</button></div>
         </div>
         <div class="card-body">
           <p class="card-cat">${esc(c.c)}</p>
-          <h3>${esc(c.t)}</h3>
-          <div class="card-meta"><span>${SVG.clock}${c.d}</span><span>${SVG.layers}${c.ch} chapitres</span><span>${c.l}</span>${c.r ? '<span class="star">★ 5,0</span>' : ''}</div>
-          <div class="card-prog"><div class="bar"><i style="width:${p}%"></i></div><span>${p}%</span></div>
+          <h3><a class="card-link" href="${esc(cubeUrl(c))}" target="_blank" rel="noopener" data-open="${c.id}">${esc(c.t)}</a></h3>
+          <div class="card-meta">${meta}<span class="ext">LE CUBE ${SVG.ext}</span></div>
         </div>
         <div class="card-glare"></div>
       </div>
@@ -183,68 +129,82 @@
 
   /* ---------- Catégories & marquee ---------- */
   function renderCats() {
-    $('#catGrid').innerHTML = CATS.map(cat => {
-      const col = COURSES.find(c => c.c === cat).col;
-      return `<button class="cat" data-cat="${esc(cat)}" style="--c:${col}">
+    const count = cat => COURSES.filter(c => c.c === cat).length;
+    $('#catGrid').innerHTML = CATS.map(cat => `<button class="cat" data-cat="${esc(cat)}" style="--c:${COURSES.find(c => c.c === cat).col}">
         <span class="cat-ico"><svg viewBox="0 0 24 24">${icon(cat)}</svg></span>
         <span class="cat-arrow"><svg viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
-        <span class="cat-text"><span class="cat-name">${esc(cat)}</span><span class="cat-count"></span><span class="cat-meter"><i></i></span></span>
-      </button>`;
-    }).join('');
+        <span class="cat-text"><span class="cat-name">${esc(cat)}</span><span class="cat-count">${count(cat)} formations</span></span>
+      </button>`).join('');
     $('#marquee').innerHTML = [...CATS, ...CATS].map(c => `<span>${esc(c)}</span><i></i>`).join('');
     $('#fCat').insertAdjacentHTML('beforeend', CATS.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join(''));
     $('#catChips').innerHTML = `<button class="chip is-active" data-chip="">Toutes les catégories</button>` +
-      CATS.map(c => `<button class="chip" data-chip="${esc(c)}">${esc(c)}<small></small></button>`).join('');
-  }
-  function updateCats() {
-    $$('.cat').forEach(el => {
-      const list = COURSES.filter(c => c.c === el.dataset.cat);
-      const acc = list.filter(canAccess).length;
-      el.querySelector('.cat-count').textContent = tier === 'initie' ? `${acc} / ${list.length} accessibles` : `${list.length} formations`;
-      el.querySelector('.cat-meter i').style.width = (acc / list.length * 100) + '%';
-    });
-    $$('.chip[data-chip]').forEach(ch => {
-      if (!ch.dataset.chip) return;
-      const list = COURSES.filter(c => c.c === ch.dataset.chip);
-      ch.querySelector('small').textContent = tier === 'initie' ? `${list.filter(canAccess).length}/${list.length}` : list.length;
-    });
+      CATS.map(c => `<button class="chip" data-chip="${esc(c)}">${esc(c)}<small>${count(c)}</small></button>`).join('');
   }
 
-  /* ---------- Reprendre ---------- */
-  function renderResume() {
-    const list = resumeList();
-    $('#resumeRail').innerHTML = list.length ? list.map(c => `<button class="resume" data-id="${c.id}">
-        ${ring(pct(c))}
-        <span class="resume-body"><small>${esc(c.c)}</small><span class="r-title">${esc(c.t)}</span><span class="r-sub">${prog[c.id]} / ${c.ch} chapitres</span></span>
-        <span class="resume-go">${SVG.next}</span>
-      </button>`).join('') : '<p class="empty">Commencez une formation : elle apparaîtra ici.</p>';
-    animateRings($('#resumeRail'));
+  /* ---------- Récemment consultées (formations ouvertes sur LE CUBE) ---------- */
+  function renderRecent() {
+    const list = recent.map(id => COURSES[id]);
+    $('#recentRail').innerHTML = list.length ? list.map(c => `<a class="recent" href="${esc(cubeUrl(c))}" target="_blank" rel="noopener" data-open="${c.id}">
+        <span class="recent-thumb">${thumb(c)}</span>
+        <span class="recent-body"><small>${esc(c.c)}</small><span>${esc(c.t)}</span></span>
+        <span class="recent-go">${SVG.ext}</span>
+      </a>`).join('') : '<p class="empty">Ouvrez une formation : elle apparaîtra ici pour y revenir en un clic.</p>';
+  }
+  function trackOpen(id) {
+    recent = [id, ...recent.filter(x => x !== id)].slice(0, 12);
+    store.set('recent', recent);
+    renderRecent();
   }
 
-  /* ---------- Catalogue (filtres + Flip) ---------- */
+  /* ---------- Formations ECN Membre ---------- */
+  function renderEcn() {
+    const open = ecnOpen();
+    $('#ecnLead').textContent = open
+      ? 'Les formations exclusives ECN Group, incluses dans votre pack.'
+      : 'Les formations exclusives ECN Group sont réservées aux packs Membre et Cercle Fondateur. En voici l’aperçu.';
+    if (!ECN.length) {
+      $('#ecnZone').innerHTML = `<div class="ecn-build">
+        <div class="ecn-skeletons" aria-hidden="true">${'<div class="sk"><i></i><i></i></div>'.repeat(3)}</div>
+        <div>
+          <span class="ecn-chip">En construction</span>
+          <h3>Les premières formations ECN arrivent bientôt</h3>
+          <p>${open ? 'Elles apparaîtront ici dès leur mise en ligne, sans démarche de votre part.' : 'Passez au Pack Membre pour y accéder dès leur mise en ligne.'}</p>
+          ${open ? '' : '<button class="btn btn-gold" data-open-upgrade>Débloquer les formations ECN</button>'}
+        </div>
+      </div>`;
+      return;
+    }
+    $('#ecnZone').innerHTML = `<div class="grid ecn-grid">${ECN.map((f, i) => {
+      const link = open && /^https:\/\//.test(f.u || '');
+      return `<article class="card${open ? '' : ' is-locked'}" data-ecn="${i}" style="--c:#d4af37">
+        <div class="card-in">
+          <div class="card-thumb">${thumb(f)}
+            <div class="lock"><div class="lock-ico">${SVG.lock}</div><span>Réservé Membre</span></div>
+          </div>
+          <div class="card-body">
+            <p class="card-cat">${esc(f.c || 'ECN Group')}</p>
+            <h3>${link ? `<a class="card-link" href="${esc(f.u)}" target="_blank" rel="noopener">${esc(f.t)}</a>` : `<button class="card-link" data-ecn-open="${i}">${esc(f.t)}</button>`}</h3>
+            <div class="card-meta">${[f.l && `<span>${esc(f.l)}</span>`, f.d && `<span>${SVG.clock}${esc(f.d)}</span>`].filter(Boolean).join('')}<span class="ext">ECN</span></div>
+          </div>
+          <div class="card-glare"></div>
+        </div>
+      </article>`;
+    }).join('')}</div>${open ? '' : '<div class="more"><button class="btn btn-gold" data-open-upgrade>Débloquer les formations ECN</button></div>'}`;
+  }
+
+  /* ---------- Catalogue LE CUBE (filtres + Flip) ---------- */
   const grid = $('#grid');
   grid.innerHTML = COURSES.map(cardHTML).join('');
   const cardEls = $$('.card', grid);
-  const state = { cat: '', level: '', dur: '', sort: 'new', q: '', mine: false, limit: 24 };
-  const hoursOf = c => { const m = c.d.match(/(\d+)h(\d+)?/); return m ? +m[1] + (m[2] ? +m[2] / 60 : 0) : 1; };
+  const state = { cat: '', level: '', sort: 'new', q: '', limit: 24 };
 
   function matches(c) {
     if (state.cat && c.c !== state.cat) return false;
     if (state.level && c.l !== state.level) return false;
-    if (state.dur) {
-      const h = hoursOf(c);
-      if ((state.dur === 's' && h >= 2) || (state.dur === 'm' && (h < 2 || h > 5)) || (state.dur === 'l' && h <= 5)) return false;
-    }
-    if (state.mine && !canAccess(c)) return false;
     if (state.q && !norm(c.t + ' ' + c.c).includes(norm(state.q.trim()))) return false;
     return true;
   }
-  function sorter(a, b) {
-    if (tier === 'initie' && canAccess(a) !== canAccess(b)) return canAccess(a) ? -1 : 1; // l'accessible d'abord
-    if (state.sort === 'az') return a.t.localeCompare(b.t, 'fr');
-    if (state.sort === 'prog') return pct(b) - pct(a) || a.id - b.id;
-    return a.id - b.id;
-  }
+  const sorter = (a, b) => (state.sort === 'az' ? a.t.localeCompare(b.t, 'fr') : (b.at || 0) - (a.at || 0) || a.id - b.id);
 
   function applyFilters(animate = true) {
     const list = COURSES.filter(matches).sort(sorter);
@@ -265,16 +225,6 @@
     } else if (anim) ST.refresh(); // l'ordre a changé : recalcule les déclencheurs de reveal
   }
 
-  function setLocks() {
-    cardEls.forEach(el => el.classList.toggle('is-locked', !canAccess(COURSES[+el.dataset.id])));
-  }
-  function refreshCardProgress(c) {
-    $$(`.card[data-id="${c.id}"]`).forEach(el => {
-      el.querySelector('.card-prog .bar i').style.width = pct(c) + '%';
-      el.querySelector('.card-prog span').textContent = pct(c) + '%';
-    });
-  }
-
   /* ---------- Favoris ---------- */
   function toggleFav(id) {
     favs.has(id) ? favs.delete(id) : favs.add(id);
@@ -286,188 +236,17 @@
       if (anim) G.fromTo(b, { scale: .6 }, { scale: 1, duration: .7, ease: 'elastic.out(1,.4)' });
     });
     setFavCount();
-    $$('[data-course-fav]').forEach(b => { b.textContent = on ? '♥ Dans vos favoris' : '♡ Ajouter aux favoris'; });
     toast(on ? 'Ajoutée à vos favoris' : 'Retirée de vos favoris');
     if (view === 'favoris') renderFavs();
   }
   function setFavCount() {
-    $('#favCount').textContent = $('#favCountM').textContent = favs.size;
+    $('#favCount').textContent = $('#favCountM').textContent = $('#statFavs').textContent = favs.size;
     $('#favCountM').hidden = !favs.size;
   }
   function renderFavs() {
     const list = [...favs].map(id => COURSES[id]).filter(Boolean);
     $('#favGrid').innerHTML = list.map(cardHTML).join('');
     $('#favEmpty').hidden = list.length > 0;
-  }
-
-  /* ---------- Fiche formation ---------- */
-  function curriculum(c) {
-    const toLessons = (arr, i) => arr.map((t, j) => ({ t: t[0] === '?' ? t.slice(1) : `${i + 1}.${j + 1}. ${t}`, q: t[0] === '?' }));
-    if (norm(c.t) === OUTLOOK_KEY) return OUTLOOK.parts.map(([name, arr], i) => ({ name, lessons: toLessons(arr, i) }));
-    const T = ['Les notions clés', 'Prise en main pas à pas', 'Vocabulaire et repères', 'Exercice guidé', 'Étude de cas réel', 'Méthodes et bonnes pratiques', 'Atelier pratique', 'Erreurs fréquentes à éviter', 'Astuces de pro', 'Techniques avancées', 'Optimiser son efficacité', 'Mise en situation'];
-    const mid = Math.max(3, c.ch - 5), a = Math.ceil(mid * .4), b = Math.ceil(mid * .35);
-    const counts = [3, a, b, Math.max(1, mid - a - b), 2];
-    const names = ['Introduction générale', 'Les fondamentaux', 'Mise en pratique', 'Aller plus loin', 'Conclusion générale'];
-    return names.map((name, i) => {
-      let arr = Array.from({ length: counts[i] }, (_, j) =>
-        i === 0 ? ['Présentation de la formation', 'Objectifs et déroulé', '?Test de positionnement'][j]
-          : i === 4 ? ['Synthèse et ressources', '?Évaluation finale'][j]
-            : T[(j + i * 4) % T.length] + (j >= T.length ? ` (${Math.floor(j / T.length) + 1})` : ''));
-      if (i > 0 && i < 4) arr = [...arr, `?Quiz de la partie ${i}`];
-      return { name, lessons: toLessons(arr, i) };
-    });
-  }
-  const flatLessons = c => curriculum(c).flatMap(p => p.lessons).filter(l => !l.q);
-  const nextLesson = c => { const l = flatLessons(c); return (l[Math.min(prog[c.id] || 0, l.length - 1)] || { t: 'Introduction' }).t; };
-
-  let current = null, lastFrom = null;
-  function fillCourse(c) {
-    current = c;
-    const ok = canAccess(c), p = pct(c), done = prog[c.id] || 0;
-    const isOutlook = norm(c.t) === OUTLOOK_KEY;
-    const desc = isOutlook ? OUTLOOK.desc : `${CAT_DESC[key(c.c)] || ''} Cette formation « ${c.t} » se suit entièrement en ligne, en vidéo, à votre rythme.`;
-    const goals = isOutlook ? OUTLOOK.goals : [`Comprendre les fondamentaux de : ${c.t}`, 'Appliquer les méthodes sur des cas concrets', 'Gagner en autonomie et en efficacité au quotidien', 'Valider vos acquis avec des quiz et une évaluation finale'];
-
-    $('#courseMedia').innerHTML = thumb(c);
-    $('#courseCrumbs').innerHTML = `<span>Accueil</span><span>›</span><span>${esc(c.c)}</span><span>›</span><b>${esc(c.t)}</b>`;
-    $('#courseTitle').textContent = c.t;
-    $('#courseLead').textContent = isOutlook ? desc.slice(0, 190) + '…' : desc;
-    $('#courseMeta').innerHTML = ['1 module', `${c.ch} chapitres`, 'Attestation de formation', `Niveau ${c.l}`, `Durée : ${c.d} environ`].map(m => `<li>${m}</li>`).join('');
-    $('#courseActions').innerHTML = ok
-      ? `<button class="btn btn-gold" data-play>${SVG.play}<span>${done ? 'Continuer la formation' : 'Commencer la formation'}</span></button>
-         <button class="btn btn-ghost" data-course-fav>${favs.has(c.id) ? '♥ Dans vos favoris' : '♡ Ajouter aux favoris'}</button>`
-      : `<button class="btn btn-gold" data-open-upgrade>${SVG.lock}<span>Débloquer avec le Pack Membre</span></button>
-         <button class="btn btn-ghost" data-goto-tab="content">Aperçu du programme</button>`;
-    $('#courseProgress').innerHTML = ok
-      ? `${ring(p)}<dl><div><dt>Progression</dt><dd>${done} / ${c.ch} chapitres</dd></div><div><dt>Dernière activité</dt><dd>${lastSeen[c.id] ? ago(lastSeen[c.id]) : done && !official ? `Il y a ${(c.id % 5) + 2} jours` : '—'}</dd></div><div><dt>Attestation</dt><dd>${p === 100 ? 'Disponible' : 'À 100 %'}</dd></div></dl><p class="next">Prochain chapitre<b>${esc(nextLesson(c))}</b></p>`
-      : `<div class="lock-ico big">${SVG.lock}</div><p class="locked-txt">Cette formation fait partie du catalogue complet, réservé aux packs <b>Membre</b> et <b>Cercle Fondateur</b>.</p>`;
-
-    $('#panelAbout').innerHTML = `<div class="about-grid">
-      <div><h4>À propos de cette formation</h4><p>${esc(desc)}</p><h4>Objectifs pédagogiques</h4><ul class="check">${goals.map(g => `<li>${esc(g)}</li>`).join('')}</ul></div>
-      <dl class="infos">
-        <div><dt>Niveau</dt><dd>${c.l}</dd></div><div><dt>Public</dt><dd>Tous publics</dd></div>
-        <div><dt>Durée</dt><dd>${c.d} environ</dd></div><div><dt>Prérequis</dt><dd>${c.l === 'Avancé' ? 'Bases du sujet' : 'Aucun'}</dd></div>
-        <div><dt>Format</dt><dd>Vidéo HD + quiz</dd></div><div><dt>Évaluation</dt><dd>Quiz & ateliers pratiques</dd></div>
-        <div><dt>Matériel</dt><dd>Ordinateur ou tablette, Internet</dd></div><div><dt>Accessibilité</dt><dd>100 % en ligne</dd></div>
-        <div><dt>Support</dt><dd>Téléphone & email</dd></div>
-      </dl></div>`;
-
-    let k = 0;
-    $('#panelContent').innerHTML = `<p class="content-sum">1 module · ${c.ch} chapitres</p>` + curriculum(c).map((part, i) => `
-      <div class="module${i === 0 ? ' is-open' : ''}">
-        <button class="module-head" aria-expanded="${i === 0}"><b>${i + 1}</b><span><h4>${esc(part.name)}</h4><small>${part.lessons.length} éléments</small></span><i>${SVG.chev}</i></button>
-        <div class="module-body" style="height:${i === 0 ? 'auto' : '0'}"><ol>${part.lessons.map(l => {
-          const idx = l.q ? -1 : k++;
-          const cls = [l.q ? 'quiz' : '', idx >= 0 && idx < done ? 'done' : '', !ok && (idx >= 3 || l.q) ? 'locked' : ''].join(' ');
-          return `<li><button class="lesson ${cls}" data-lesson="${esc(l.t)}"><span class="st"></span><span>${esc(l.t)}</span><em>${l.q ? 'Quiz' : `${(idx % 7) + 3} min`}</em></button></li>`;
-        }).join('')}</ol></div>
-      </div>`).join('');
-
-    $('#panelReviews').innerHTML = `<div class="reviews">
-      <div class="score"><b>${c.r ? '5,0' : '—'}</b><div class="stars">${c.r ? '★★★★★' : '☆☆☆☆☆'}</div><p>${c.r ? '1 avis' : 'Pas encore d’avis'}</p></div>
-      <div>${c.r ? '<div class="review"><h5>Apprenant·e vérifié·e</h5><div class="stars">★★★★★</div><p>Formation claire et concrète, on applique tout de suite au travail.</p></div>' : ''}
-        <div class="review"><h5>Donnez votre avis sur cette formation</h5><p>Votre retour aide les autres membres ECN à choisir leur prochaine formation.</p><button class="btn btn-ghost sm" data-review style="margin-top:14px">Envoyer mon avis</button></div>
-      </div></div>`;
-    setTab('about', false);
-    animateRings($('#courseProgress'));
-  }
-
-  function setTab(name, animate = true) {
-    $$('.tabs button').forEach(b => b.classList.toggle('is-active', b.dataset.tab === name));
-    $$('.tab-panel').forEach(p => p.classList.toggle('is-active', p.dataset.panel === name));
-    const b = $(`.tabs button[data-tab="${name}"]`), ink = $('.tab-ink');
-    ink.style.width = b.offsetWidth + 'px';
-    ink.style.transform = `translateX(${b.offsetLeft}px)`;
-    if (anim && animate) G.fromTo(`.tab-panel[data-panel="${name}"] > *`, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .7, stagger: .05, ease: 'expo.out' });
-  }
-
-  // Ouverture simple : fondu + légère montée du contenu (plus de découpe depuis la carte)
-  function openCourse(c, fromEl) {
-    fillCourse(c);
-    lastFrom = fromEl || null;
-    const el = $('#course');
-    el.hidden = false;
-    $('.course-scroll').scrollTop = 0;
-    lock(true);
-    window.dispatchEvent(new CustomEvent('ecn:pause', { detail: true }));
-    setTab('about', false);
-    if (anim) {
-      G.killTweensOf([el, '.course-scroll']);
-      G.fromTo(el, { opacity: 0 }, { opacity: 1, duration: .35, ease: 'power2.out' });
-      G.fromTo('.course-scroll', { y: 24 }, { y: 0, duration: .55, ease: 'power3.out', clearProps: 'transform' });
-    }
-    $('[data-close-course]').focus({ preventScroll: true });
-  }
-  function closeCourse() {
-    const el = $('#course');
-    if (el.hidden) return;
-    const done = () => {
-      el.hidden = true;
-      current = null;
-      lock(false);
-      window.dispatchEvent(new CustomEvent('ecn:pause', { detail: false }));
-      if (lastFrom && document.contains(lastFrom)) lastFrom.focus({ preventScroll: true });
-    };
-    if (!anim) return done();
-    G.killTweensOf([el, '.course-scroll']);
-    G.to('.course-scroll', { y: 16, duration: .25, ease: 'power2.in', clearProps: 'transform' });
-    G.to(el, { opacity: 0, duration: .25, ease: 'power2.in', onComplete: () => { G.set(el, { clearProps: 'opacity' }); done(); } });
-  }
-
-  /* ---------- Lecteur ---------- */
-  let playTween = null, playCourse = null;
-  function openPlayer(c, title) {
-    playCourse = c;
-    $('#playerCourse').textContent = `${c.c} · ${c.t}`;
-    $('#playerTitle').textContent = title || nextLesson(c);
-    $('#screenTitle').textContent = $('#playerTitle').textContent;
-    resetPlayer();
-    openModal('#player');
-  }
-  function resetPlayer() {
-    if (playTween) playTween.kill();
-    $('#screen').classList.remove('is-playing');
-    $('#scrubBar').style.width = '0';
-    $('#playerTime').textContent = '00:00';
-  }
-  function play() {
-    $('#screen').classList.add('is-playing');
-    const o = { t: 0 };
-    const tick = () => {
-      const s = Math.round(o.t * 504);
-      $('#scrubBar').style.width = (o.t * 100) + '%';
-      $('#playerTime').textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-    };
-    playTween = G ? G.to(o, { t: 1, duration: 14, ease: 'none', onUpdate: tick }) : null;
-  }
-  function markDone(btn) {
-    const c = playCourse;
-    if (!c) return;
-    prog[c.id] = Math.min(c.ch, (prog[c.id] || 0) + 1);
-    if (!order.includes(c.id)) order.unshift(c.id);
-    lastSeen[c.id] = Date.now();
-    store.set('prog', prog);
-    store.set('order', order);
-    store.set('last', lastSeen);
-    burst(btn);
-    toast(`Chapitre validé · progression ${pct(c)} %`);
-    refreshCardProgress(c);
-    renderResume();
-    countStats();
-    if (current && current.id === c.id) fillCourse(c);
-    $('#playerTitle').textContent = $('#screenTitle').textContent = nextLesson(c);
-    resetPlayer();
-  }
-  function burst(el) {
-    if (!anim) return;
-    const r = el.getBoundingClientRect();
-    for (let i = 0; i < 26; i++) {
-      const d = document.createElement('i');
-      d.style.cssText = `position:fixed;z-index:900;left:${r.left + r.width / 2}px;top:${r.top + r.height / 2}px;width:7px;height:7px;border-radius:50%;pointer-events:none;background:var(--a-l);box-shadow:0 0 12px var(--a)`;
-      document.body.appendChild(d);
-      const a = Math.random() * Math.PI * 2, v = 60 + Math.random() * 140;
-      G.to(d, { x: Math.cos(a) * v, y: Math.sin(a) * v - 40, opacity: 0, scale: .2, duration: 1 + Math.random() * .6, ease: 'expo.out', onComplete: () => d.remove() });
-    }
   }
 
   /* ---------- Modales & verrou de scroll ---------- */
@@ -484,17 +263,17 @@
     lock(true);
     if (anim) {
       G.fromTo(m.querySelector('.modal-backdrop'), { opacity: 0 }, { opacity: 1, duration: .5 });
-      G.fromTo(m.querySelector('.player-box, .upgrade-box'), { y: lite ? 40 : 80, scale: .92, rotateX: lite ? 0 : 14, opacity: 0, transformPerspective: 1200 }, { y: 0, scale: 1, rotateX: 0, opacity: 1, duration: .9, ease: 'expo.out' });
+      G.fromTo(m.querySelector('.upgrade-box'), { y: lite ? 40 : 80, scale: .92, rotateX: lite ? 0 : 14, opacity: 0, transformPerspective: 1200 }, { y: 0, scale: 1, rotateX: 0, opacity: 1, duration: .9, ease: 'expo.out' });
       G.fromTo(m.querySelectorAll('.plan'), { y: lite ? 24 : 50, opacity: 0, rotateY: lite ? 0 : -20 }, { y: 0, opacity: 1, rotateY: 0, duration: 1, stagger: .08, delay: .15, ease: 'expo.out' });
     }
     m.querySelector('.close-btn').focus({ preventScroll: true });
   }
   function closeModal(m, then) {
     if (!m || m.hidden) return then && then();
-    const done = () => { m.hidden = true; lock(false); if (m.id === 'player') resetPlayer(); if (lastFocus) lastFocus.focus({ preventScroll: true }); if (then) then(); };
+    const done = () => { m.hidden = true; lock(false); if (lastFocus) lastFocus.focus({ preventScroll: true }); if (then) then(); };
     if (!anim) return done();
     G.to(m.querySelector('.modal-backdrop'), { opacity: 0, duration: .35 });
-    G.to(m.querySelector('.player-box, .upgrade-box'), { y: 50, scale: .95, opacity: 0, duration: .35, ease: 'power2.in', onComplete: done });
+    G.to(m.querySelector('.upgrade-box'), { y: 50, scale: .95, opacity: 0, duration: .35, ease: 'power2.in', onComplete: done });
   }
 
   /* ---------- Changement de pack ---------- */
@@ -511,14 +290,7 @@
     $('#passTag').textContent = T.tag;
     $('#passDesc').textContent = T.desc;
     $('#heroEyebrow').textContent = T.eyebrow;
-    $('#lockedCount').textContent = COURSES.filter(c => !c.i).length;
-    if (tier !== 'initie') { state.mine = false; $('#fMine').checked = false; }
-    setLocks();
-    updateCats();
-    renderResume();
-    countStats();
-    if (view === 'favoris') renderFavs();
-    if (current) fillCourse(current);
+    renderEcn();
   }
   function setTier(t, x = innerWidth / 2, y = 40) {
     if (official || !TIERS[t] || t === tier) return; // le pack réel vient de la base ECN
@@ -527,7 +299,6 @@
       root.dataset.tier = t;
       store.set('tier', t);
       updateTierUI();
-      applyFilters(false);
     };
     if (document.startViewTransition && !reduce) {
       const vt = document.startViewTransition(apply);
@@ -543,18 +314,19 @@
   }
 
   function countStats() {
-    const vals = { statAccess: COURSES.filter(canAccess).length, statProgress: resumeList().length, statHours: Math.round(COURSES.reduce((n, c) => n + (prog[c.id] || 0), 0) * 6 / 60), statCerts: COURSES.filter(c => pct(c) === 100).length }; // ~6 min par chapitre
+    const vals = { statCube: COURSES.length, statCats: CATS.length };
     Object.entries(vals).forEach(([id, v]) => {
       const el = $('#' + id);
       if (!anim) { el.textContent = v; return; }
       const o = { v: +el.textContent || 0 };
       G.to(o, { v, duration: 1.8, ease: 'expo.out', overwrite: true, onUpdate: () => { el.textContent = Math.round(o.v); } });
     });
-    $('#statTotal').textContent = '/ ' + COURSES.length;
+    $('#statEcn').textContent = ECN.length || 'Bientôt';
   }
 
   /* ---------- Vues ---------- */
   let view = 'dashboard';
+  const SECTIONS = { ecn: '#ecn', catalogue: '#catalog' }; // entrées de menu qui défilent dans le tableau de bord, dans l'ordre de la page
   const scrollToEl = (target, immediate) => {
     if (lenis) lenis.scrollTo(target, { offset: target === 0 ? 0 : -100, duration: 1.6, immediate: !!immediate });
     else if (target === 0) scrollTo({ top: 0, behavior: immediate ? 'auto' : 'smooth' });
@@ -562,9 +334,9 @@
   };
   const setNavActive = name => $$('.nav-links button, .tabbar button').forEach(b => b.classList.toggle('is-active', b.dataset.view === name));
   function go(name) {
-    const target = name === 'catalogue' ? 'dashboard' : name;
+    const target = SECTIONS[name] ? 'dashboard' : name;
     setNavActive(name);
-    const after = () => { if (name === 'catalogue') scrollToEl('#catalog'); };
+    const after = () => { if (SECTIONS[name]) scrollToEl(SECTIONS[name]); };
     window.dispatchEvent(new CustomEvent('ecn:view', { detail: target }));
     if (target === view) { if (name === 'dashboard') scrollToEl(0); after(); return; }
     const cur = $('#view-' + view), next = $('#view-' + target);
@@ -584,11 +356,11 @@
 
   /* ---------- FAQ ---------- */
   const FAQ = [
-    ['Comment reprendre une formation là où je me suis arrêté ?', 'Depuis votre tableau de bord, la section « Reprendre une formation » affiche vos formations en cours. Le bouton « Continuer » vous ramène directement au chapitre suivant, sans avoir à chercher.'],
-    ['Ma progression ne semble pas à jour, que faire ?', 'Votre avancement est enregistré au fil de votre lecture. Si l’affichage vous paraît en retard, revenez sur le tableau de bord après avoir quitté la leçon : il se met alors à jour automatiquement.'],
-    ['Comment obtenir mon attestation de formation ?', 'L’attestation devient disponible une fois la formation terminée à 100 %, lorsque toutes les conditions de validation sont remplies.'],
-    ['Que comprend mon pack ECN Group ?', 'Le Pack Initié donne accès au socle de 22 formations de base. Les packs Membre (Golden Card) et Cercle Fondateur ouvrent l’ensemble du catalogue, dans toutes les catégories, avec les nouveautés ajoutées chaque mois.'],
-    ['Comment passer du Pack Initié au Pack Membre ?', 'Depuis votre espace membre ECN Group, rubrique Adhésion. Votre accès s’étend à tout le catalogue dès la confirmation de votre règlement.']
+    ['Comment suivre une formation LE CUBE ?', 'Cliquez sur une formation : elle s’ouvre sur lecube.biz, la plateforme de notre partenaire LE CUBE Formations. Connectez-vous-y avec vos identifiants LE CUBE pour la suivre.'],
+    ['Où retrouver ma progression et mes attestations ?', 'Sur LE CUBE Formations : votre avancement et vos attestations y sont enregistrés. Ici, la rubrique « Récemment consultées » vous permet d’y revenir en un clic.'],
+    ['Que comprend mon pack ECN Group ?', 'Le Pack Initié donne accès à tout le catalogue LE CUBE. Les packs Membre (Golden Card) et Cercle Fondateur y ajoutent les formations exclusives ECN Membre.'],
+    ['Quand arrivent les formations ECN Membre ?', 'Elles sont en cours de préparation. Elles apparaîtront automatiquement dans la rubrique « Formations ECN Membre » dès leur mise en ligne.'],
+    ['Comment passer du Pack Initié au Pack Membre ?', 'Depuis votre espace membre ECN Group, rubrique Adhésion. Les formations ECN Membre s’ouvrent dès la confirmation de votre règlement.']
   ];
   $('#faq').innerHTML = FAQ.map(([q, a]) => `<div class="qa"><button aria-expanded="false"><span>${esc(q)}</span><i></i></button><div class="qa-body"><p>${esc(a)}</p></div></div>`).join('');
   function accordion(item, bodySel, force) {
@@ -601,17 +373,30 @@
   }
 
   /* ---------- Événements ---------- */
-  function onCardActivate(e) {
-    const fav = e.target.closest('.fav');
-    if (fav) { e.stopPropagation(); toggleFav(+fav.dataset.fav); return; }
-    const card = e.target.closest('.card');
-    if (card) openCourse(COURSES[+card.dataset.id], card);
-  }
   [grid, $('#favGrid')].forEach(g => {
-    g.addEventListener('click', onCardActivate);
-    g.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('card')) { e.preventDefault(); onCardActivate(e); } });
+    g.addEventListener('click', e => {
+      const fav = e.target.closest('.fav');
+      if (fav) { e.preventDefault(); toggleFav(+fav.dataset.fav); return; }
+      // toute la carte ouvre la formation (le lien du titre porte l'URL et l'accessibilité)
+      const card = e.target.closest('.card');
+      if (card && !e.target.closest('a')) card.querySelector('a.card-link').click();
+    });
     bindTilt(g, '.card', 14, '.card-in');
   });
+  // ouverture d'une formation LE CUBE (clic, clic molette) : mémorisée dans « Récemment consultées »
+  ['click', 'auxclick'].forEach(type => document.addEventListener(type, e => {
+    const a = e.target.closest('a[data-open]');
+    if (a && !(type === 'click' && railMoved)) trackOpen(+a.dataset.open);
+  }));
+  $('#ecnZone').addEventListener('click', e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    if (!ecnOpen()) { openModal('#upgrade'); return; } // aperçu Initié
+    const a = card.querySelector('a.card-link');
+    if (a) { if (!e.target.closest('a')) a.click(); return; }
+    toast('Cette formation ECN sera bientôt disponible.');
+  });
+  bindTilt($('#ecnZone'), '.card', 14, '.card-in');
   bindTilt($('#catGrid'), '.cat', 16);
   bindTilt($('.pass-wrap'), '.pass', 22);
   bindTilt($('.help-grid'), '.help-cta', 8);
@@ -632,9 +417,7 @@
   $('#fCat').addEventListener('change', e => setChip(e.target.value));
   $('#catChips').addEventListener('click', e => { const ch = e.target.closest('.chip'); if (ch) setChip(ch.dataset.chip); });
   $('#fLevel').addEventListener('change', e => { state.level = e.target.value; applyFilters(); });
-  $('#fDur').addEventListener('change', e => { state.dur = e.target.value; applyFilters(); });
   $('#fSort').addEventListener('change', e => { state.sort = e.target.value; applyFilters(); });
-  $('#fMine').addEventListener('change', e => { state.mine = e.target.checked; applyFilters(); });
   let qTimer;
   $('#fSearch').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value; state.limit = 24; applyFilters(); }, 200); });
   $('#heroSearch').addEventListener('submit', e => {
@@ -650,33 +433,18 @@
   });
   $('#loadMore').addEventListener('click', () => { state.limit += 24; applyFilters(); });
 
-  $('#resumeRail').addEventListener('click', e => { const r = e.target.closest('.resume'); if (r && !railMoved) openCourse(COURSES[+r.dataset.id], r); });
-  $$('[data-rail]').forEach(b => b.addEventListener('click', () => $('#resumeRail').scrollBy({ left: +b.dataset.rail * 400, behavior: 'smooth' })));
-  // Glisser-déposer horizontal du rail à la souris
+  $$('[data-rail]').forEach(b => b.addEventListener('click', () => $('#recentRail').scrollBy({ left: +b.dataset.rail * 400, behavior: 'smooth' })));
+  // Glisser-déposer horizontal du rail à la souris (sans ouvrir le lien en fin de glissé)
   let railDown = false, railX = 0, railL = 0, railMoved = false;
-  const rail = $('#resumeRail');
+  const rail = $('#recentRail');
   rail.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') return; railDown = true; railMoved = false; railX = e.clientX; railL = rail.scrollLeft; });
   addEventListener('pointermove', e => { if (!railDown) return; const dx = e.clientX - railX; if (Math.abs(dx) > 5) { railMoved = true; rail.classList.add('is-drag'); } rail.scrollLeft = railL - dx; });
   addEventListener('pointerup', () => { railDown = false; rail.classList.remove('is-drag'); setTimeout(() => { railMoved = false; }, 0); });
+  rail.addEventListener('click', e => { if (railMoved) e.preventDefault(); });
+  rail.addEventListener('dragstart', e => e.preventDefault());
 
   $$('.tier-switch button').forEach(b => b.addEventListener('click', e => setTier(b.dataset.tier, e.clientX || innerWidth / 2, e.clientY || 40)));
-  $$('.tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
-
-  $('#course').addEventListener('click', e => {
-    if (e.target.closest('[data-close-course]')) return closeCourse();
-    if (e.target.closest('[data-play]')) return openPlayer(current);
-    if (e.target.closest('[data-course-fav]')) return toggleFav(current.id);
-    if (e.target.closest('[data-review]')) return toast('Merci ! Votre avis a été envoyé (démo).');
-    const tab = e.target.closest('[data-goto-tab]');
-    if (tab) return setTab(tab.dataset.gotoTab);
-    const mod = e.target.closest('.module-head');
-    if (mod) return accordion(mod.parentElement, '.module-body');
-    const les = e.target.closest('.lesson');
-    if (les) return canAccess(current) ? openPlayer(current, les.dataset.lesson) : openModal('#upgrade');
-  });
   $('#faq').addEventListener('click', e => { const b = e.target.closest('button'); if (b) accordion(b.parentElement, '.qa-body'); });
-  $('#playBtn').addEventListener('click', play);
-  $('#markDone').addEventListener('click', e => markDone(e.currentTarget));
   $('#supportBtn').addEventListener('click', () => toast('Démo : ouverture de la conversation WhatsApp du support'));
 
   document.addEventListener('click', e => {
@@ -697,9 +465,9 @@
   addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     const m = $$('.modal').find(x => !x.hidden);
-    m ? closeModal(m) : closeCourse();
+    if (m) closeModal(m);
   });
-  addEventListener('resize', () => { placePill(); if (current) setTab($('.tabs button.is-active').dataset.tab, false); });
+  addEventListener('resize', placePill);
 
   /* ---------- Motion : Lenis, curseur, aimants, reveals ---------- */
   let lenis = null;
@@ -760,20 +528,24 @@
   function reveals() {
     const tilt = !lite; // pas de rotations 3D sur mobile : elles font scintiller icônes et logos
     $$('.block-head .split').forEach(h => G.from(h.querySelectorAll('.w > *'), { yPercent: 115, rotate: tilt ? 4 : 0, duration: lite ? .9 : 1.3, stagger: .06, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 90%' } }));
-    $$('.block-head .eyebrow, .result-count, .rail-nav').forEach(e => G.from(e, { opacity: 0, x: -24, duration: 1, ease: 'expo.out', scrollTrigger: { trigger: e, start: 'top 94%' } }));
+    $$('.block-head .eyebrow, .result-count, .rail-nav, .ecn-badge').forEach(e => G.from(e, { opacity: 0, x: -24, duration: 1, ease: 'expo.out', scrollTrigger: { trigger: e, start: 'top 94%' } }));
     batchReveal('.cat', tilt ? { y: 100, rotateX: -45, transformPerspective: 900 } : { y: 30 });
     if (tilt) batchReveal('#grid .card', { y: 90, rotateX: -25, scale: .94, transformPerspective: 1200 }); // mobile : cartes affichées direct, pas de trou en défilement rapide
     batchReveal('.perk', { y: lite ? 30 : 60 });
-    batchReveal('.filters, .upsell-card', { y: lite ? 24 : 50 });
-    G.from('.resume', { x: lite ? 60 : 140, opacity: 0, duration: lite ? .9 : 1.3, stagger: .08, ease: 'expo.out', scrollTrigger: { trigger: '#resumeRail', start: 'top 92%' } });
+    batchReveal('.filters, #ecnZone', { y: lite ? 24 : 50 });
+    G.from('.recent', { x: lite ? 60 : 140, opacity: 0, duration: lite ? .9 : 1.3, stagger: .08, ease: 'expo.out', scrollTrigger: { trigger: '#recentRail', start: 'top 92%' } });
     if (lite) return;
     G.to('.hero-copy', { yPercent: -18, opacity: .15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
     G.to('.pass-wrap', { y: -160, rotateX: 28, scale: .9, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
     G.fromTo('.marquee', { opacity: .3 }, { opacity: 1, scrollTrigger: { trigger: '.marquee', start: 'top bottom', end: 'top 60%', scrub: true } });
   }
 
-  // l'onglet actif suit le défilement entre l'accueil et le catalogue
-  if (anim) ST.create({ trigger: '#catalog', start: 'top 55%', end: 'bottom 45%', onToggle: st => { if (view === 'dashboard') setNavActive(st.isActive ? 'catalogue' : 'dashboard'); } });
+  // l'onglet actif suit le défilement : accueil, formations ECN, catalogue
+  if (anim) {
+    const zones = [];
+    const syncNav = () => { if (view === 'dashboard') setNavActive((zones.filter(z => z.st.isActive).pop() || { name: 'dashboard' }).name); }; // la plus basse visible l'emporte
+    Object.entries(SECTIONS).forEach(([name, sel]) => zones.push({ name, st: ST.create({ trigger: sel, start: 'top 55%', end: 'bottom 45%', onToggle: syncNav }) }));
+  }
 
   function intro() {
     const tl = G.timeline({ paused: true, defaults: { ease: 'expo.out' } });
@@ -802,6 +574,7 @@
     });
   }
   renderCats();
+  renderRecent();
   updateTierUI();
   applyFilters(false);
   setFavCount();
