@@ -282,6 +282,9 @@
     $('#passTag').textContent = T.tag;
     $('#passDesc').textContent = T.desc;
     $('#heroEyebrow').textContent = T.eyebrow;
+    $('#pmPack').textContent = `${T.name} · ${T.tag}`;
+    $('#pmDesc').textContent = T.desc;
+    $('#pmUpgrade').hidden = tier === 'fondateur';
     renderEcn();
   }
   function setTier(t, x = innerWidth / 2, y = 40) {
@@ -451,8 +454,15 @@
     }
     if (e.target.closest('[data-close-modal]')) closeModal(e.target.closest('.modal'));
   });
+  // Profil ECN : l'avatar ouvre la fiche (identité, formule, déconnexion en bas)
+  const avatar = $('#avatar'), profileMenu = $('#profileMenu');
+  const setProfile = open => { profileMenu.hidden = !open; avatar.setAttribute('aria-expanded', open); };
+  avatar.addEventListener('click', e => { e.stopPropagation(); setProfile(profileMenu.hidden); });
+  document.addEventListener('click', e => { if (!profileMenu.hidden && !profileMenu.contains(e.target)) setProfile(false); });
+
   addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (!profileMenu.hidden) { setProfile(false); avatar.focus(); return; }
     const m = $$('.modal').find(x => !x.hidden);
     if (m) closeModal(m);
   });
@@ -553,9 +563,11 @@
     $('#heroName').textContent = first;
     $('#passHolder').textContent = full;
     $('#passNum').textContent = MEMBER.memberCode ? `ECN · ${MEMBER.memberCode}` : 'ECN Group';
-    $('#avatarInitials').textContent = ((MEMBER.firstName || ' ')[0] + (MEMBER.lastName || ' ')[0]).trim().toUpperCase() || 'EC';
-    $('#avatar').href = '/logout';
-    $('#avatar').title = `${full} · Se déconnecter`;
+    $('#avatarInitials').textContent = $('#pmInitials').textContent = ((MEMBER.firstName || ' ')[0] + (MEMBER.lastName || ' ')[0]).trim().toUpperCase() || 'EC';
+    $('#avatar').title = `${full} · Mon profil ECN`;
+    $('#pmName').textContent = full;
+    $('#pmEmail').textContent = MEMBER.email || '';
+    $('#pmCode').textContent = MEMBER.memberCode ? `Code membre ${MEMBER.memberCode}` : '';
     $$('[data-set-tier]').forEach(b => {
       b.textContent = b.dataset.setTier === tier ? 'Votre pack actuel' : 'Faire évoluer mon adhésion';
       b.disabled = b.dataset.setTier === tier;

@@ -58,7 +58,30 @@
       <button data-tier="fondateur" aria-pressed="false">Fondateur</button>
       <i class="tier-pill" aria-hidden="true"></i>
     </div>
-    <a class="avatar" id="avatar" title="Alex Martin"><span id="avatarInitials">AM</span></a>
+    <button class="avatar" id="avatar" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="profileMenu" title="Mon profil ECN"><span id="avatarInitials">AM</span></button>
+
+    <!-- Profil ECN : identité, formule et déconnexion -->
+    <div class="profile-menu" id="profileMenu" role="dialog" aria-label="Mon profil ECN" hidden>
+      <div class="pm-head">
+        <span class="pm-avatar" id="pmInitials" aria-hidden="true">AM</span>
+        <div class="pm-id">
+          <b id="pmName">Alex Martin</b>
+          <small id="pmEmail"></small>
+          <small id="pmCode">ECN · 0427 · 2026</small>
+        </div>
+      </div>
+      <div class="pm-pack">
+        <span class="pm-label">Ma formule</span>
+        <span class="pm-badge" id="pmPack">Pack Membre</span>
+        <p id="pmDesc"></p>
+      </div>
+      <nav class="pm-links" aria-label="Mon compte">
+        <a href="https://ecn-group.com/dashboard" target="_blank" rel="noopener">Mon espace ECN Group <span aria-hidden="true">↗</span></a>
+        <a id="pmUpgrade" href="https://ecn-group.com/dashboard#tab-adhesion" target="_blank" rel="noopener">Faire évoluer mon adhésion <span aria-hidden="true">↗</span></a>
+      </nav>
+      <a class="btn btn-ghost sm pm-logout logout" href="/logout">Se déconnecter</a>
+      <p class="pm-demo">Aperçu de démo : aucun compte ECN connecté.</p>
+    </div>
   </header>
 
   <!-- Barre d'onglets mobile -->

@@ -54,7 +54,7 @@ async function sb(env, path, { method = 'GET', body, prefer } = {}) {
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
-const member = async (env, id) => ((await sb(env, `users?select=id,first_name,last_name,member_code,status,role,pack,pack_status,formation_linked_at&id=eq.${encodeURIComponent(id)}`)) || [])[0] || null;
+const member = async (env, id) => ((await sb(env, `users?select=id,email,first_name,last_name,member_code,status,role,pack,pack_status,formation_linked_at&id=eq.${encodeURIComponent(id)}`)) || [])[0] || null;
 
 async function hmacKey(env) {
   return crypto.subtle.importKey('raw', enc.encode(env.SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
@@ -121,7 +121,7 @@ async function app(request, env, uid) {
   // requête neuve, sans en-têtes conditionnels : jamais de 304 vers une ancienne page sans profil
   const page = await env.ASSETS.fetch(new Request(new URL('/', request.url), { headers: { Accept: 'text/html' } }));
   const data = JSON.stringify({
-    id: user.id, tier, firstName: user.first_name || '', lastName: user.last_name || '', memberCode: user.member_code || ''
+    id: user.id, tier, firstName: user.first_name || '', lastName: user.last_name || '', email: user.email || '', memberCode: user.member_code || ''
   }).replace(/</g, '\\u003c');
   const html = new HTMLRewriter()
     .on('head', { element(el) { el.append(`<script>window.ECN_MEMBER=${data};</script>`, { html: true }); } })
