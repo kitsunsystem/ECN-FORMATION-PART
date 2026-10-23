@@ -12,15 +12,14 @@
   const lite = matchMedia('(max-width: 980px), (pointer: coarse)').matches; // mobile/tablette : animations allégées
   const G = window.gsap;
   const ST = window.ScrollTrigger;
-  const Flip = window.Flip;
-  const anim = !!(G && ST && Flip) && !reduce;
-  if (anim) G.registerPlugin(ST, Flip);
+  const anim = !!(G && ST) && !reduce;
+  if (anim) G.registerPlugin(ST);
   const root = document.documentElement;
 
   // Version officielle : profil injecté par le Worker après vérification du compte ECN (absent = aperçu de démo)
   const MEMBER = window.ECN_MEMBER || null;
   const official = !!MEMBER;
-  const ECN_ADHESION_URL = 'https://ecn-group.com/dashboard.html';
+  const ECN_ADHESION_URL = 'https://ecn-group.com/dashboard#tab-adhesion';
   const ns = official ? `ecnf:${MEMBER.id}:` : 'ecnf:'; // favoris et historique propres à chaque membre
   const store = {
     get(k, d) { try { const v = localStorage.getItem(ns + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
@@ -98,7 +97,6 @@
           <h3><a class="card-link" href="${esc(cubeUrl(c))}" target="_blank" rel="noopener" data-open="${c.id}">${esc(c.t)}</a></h3>
           <div class="card-meta">${meta}<span class="ext">LE CUBE ${SVG.ext}</span></div>
         </div>
-        <div class="card-glare"></div>
       </div>
     </article>`;
   }
@@ -186,13 +184,12 @@
             <h3>${link ? `<a class="card-link" href="${esc(f.u)}" target="_blank" rel="noopener">${esc(f.t)}</a>` : `<button class="card-link" data-ecn-open="${i}">${esc(f.t)}</button>`}</h3>
             <div class="card-meta">${[f.l && `<span>${esc(f.l)}</span>`, f.d && `<span>${SVG.clock}${esc(f.d)}</span>`].filter(Boolean).join('')}<span class="ext">ECN</span></div>
           </div>
-          <div class="card-glare"></div>
         </div>
       </article>`;
     }).join('')}</div>${open ? '' : '<div class="more"><button class="btn btn-gold" data-open-upgrade>Débloquer les formations ECN</button></div>'}`;
   }
 
-  /* ---------- Catalogue LE CUBE (filtres + Flip) ---------- */
+  /* ---------- Catalogue LE CUBE (filtres) ---------- */
   const grid = $('#grid');
   grid.innerHTML = COURSES.map(cardHTML).join('');
   const cardEls = $$('.card', grid);
@@ -206,23 +203,18 @@
   }
   const sorter = (a, b) => (state.sort === 'az' ? a.t.localeCompare(b.t, 'fr') : (b.at || 0) - (a.at || 0) || a.id - b.id);
 
+  // Filtres : on affiche/masque les cartes dans le flux normal de la page, puis un simple fondu
   function applyFilters(animate = true) {
     const list = COURSES.filter(matches).sort(sorter);
     const shown = new Set(list.slice(0, state.limit).map(c => c.id));
-    const flipState = anim && animate ? Flip.getState(cardEls) : null;
     list.forEach(c => grid.appendChild(cardEls[c.id]));
     cardEls.forEach(el => { el.hidden = !shown.has(+el.dataset.id); });
     $('#resultCount').textContent = list.length;
     $('#emptyState').hidden = list.length > 0;
     $('.more').hidden = list.length <= state.limit;
-    if (flipState) {
-      Flip.from(flipState, {
-        duration: .8, ease: 'expo.out', absolute: true, stagger: .008, nested: true,
-        onEnter: els => G.fromTo(els, { opacity: 0, scale: .82, y: 40 }, { opacity: 1, scale: 1, y: 0, duration: .8, stagger: .025, ease: 'expo.out' }),
-        onLeave: els => G.to(els, { opacity: 0, scale: .82, duration: .35, ease: 'power2.in' }),
-        onComplete: () => ST.refresh()
-      });
-    } else if (anim) ST.refresh(); // l'ordre a changé : recalcule les déclencheurs de reveal
+    if (!anim) return;
+    if (animate) G.fromTo(cardEls.filter(el => !el.hidden), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .35, stagger: .015, ease: 'power2.out', overwrite: true, clearProps: 'opacity,transform' });
+    ST.refresh(); // la hauteur du catalogue a changé : recalcule les autres déclencheurs
   }
 
   /* ---------- Favoris ---------- */
@@ -381,7 +373,6 @@
       const card = e.target.closest('.card');
       if (card && !e.target.closest('a')) card.querySelector('a.card-link').click();
     });
-    bindTilt(g, '.card', 14, '.card-in');
   });
   // ouverture d'une formation LE CUBE (clic, clic molette) : mémorisée dans « Récemment consultées »
   ['click', 'auxclick'].forEach(type => document.addEventListener(type, e => {
@@ -396,7 +387,6 @@
     if (a) { if (!e.target.closest('a')) a.click(); return; }
     toast('Cette formation ECN sera bientôt disponible.');
   });
-  bindTilt($('#ecnZone'), '.card', 14, '.card-in');
   bindTilt($('#catGrid'), '.cat', 16);
   bindTilt($('.pass-wrap'), '.pass', 22);
   bindTilt($('.help-grid'), '.help-cta', 8);
@@ -445,7 +435,6 @@
 
   $$('.tier-switch button').forEach(b => b.addEventListener('click', e => setTier(b.dataset.tier, e.clientX || innerWidth / 2, e.clientY || 40)));
   $('#faq').addEventListener('click', e => { const b = e.target.closest('button'); if (b) accordion(b.parentElement, '.qa-body'); });
-  $('#supportBtn').addEventListener('click', () => toast('Démo : ouverture de la conversation WhatsApp du support'));
 
   document.addEventListener('click', e => {
     const v = e.target.closest('[data-view]');
@@ -530,7 +519,6 @@
     $$('.block-head .split').forEach(h => G.from(h.querySelectorAll('.w > *'), { yPercent: 115, rotate: tilt ? 4 : 0, duration: lite ? .9 : 1.3, stagger: .06, ease: 'expo.out', scrollTrigger: { trigger: h, start: 'top 90%' } }));
     $$('.block-head .eyebrow, .result-count, .rail-nav, .ecn-badge').forEach(e => G.from(e, { opacity: 0, x: -24, duration: 1, ease: 'expo.out', scrollTrigger: { trigger: e, start: 'top 94%' } }));
     batchReveal('.cat', tilt ? { y: 100, rotateX: -45, transformPerspective: 900 } : { y: 30 });
-    if (tilt) batchReveal('#grid .card', { y: 90, rotateX: -25, scale: .94, transformPerspective: 1200 }); // mobile : cartes affichées direct, pas de trou en défilement rapide
     batchReveal('.perk', { y: lite ? 30 : 60 });
     batchReveal('.filters, #ecnZone', { y: lite ? 24 : 50 });
     G.from('.recent', { x: lite ? 60 : 140, opacity: 0, duration: lite ? .9 : 1.3, stagger: .08, ease: 'expo.out', scrollTrigger: { trigger: '#recentRail', start: 'top 92%' } });
