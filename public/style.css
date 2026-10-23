@@ -381,9 +381,16 @@ html[data-tier="fondateur"] .badge.vip { display: inline-block; }
 .foot-brand { display: flex; align-items: center; gap: 12px; color: var(--tx-2); }
 .foot-brand img { width: 34px; height: 34px; object-fit: contain; }
 .foot-brand b { color: var(--a-l); }
+.foot-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+/* version officielle (membre connecté) : pas de sélecteur démo, déconnexion visible */
+.logout { display: none; }
+html.is-official .logout { display: inline-flex; }
+html.is-official .tier-switch { display: none; }
+a.avatar { text-decoration: none; }
+html.is-official .nav-links { margin-right: 0; }
 
 /* ---------- Course overlay ---------- */
-.course { position: fixed; inset: 0; z-index: 300; background: #06070b; clip-path: inset(0 round 0); }
+.course { position: fixed; inset: 0; z-index: 300; background: #06070b; }
 .course[hidden] { display: none; }
 .course-scroll { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 80px; }
 .close-btn { position: fixed; z-index: 5; top: 18px; right: 18px; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: rgba(5, 6, 8, .6); border: 1px solid rgba(var(--a-rgb), .35); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: transform .5s var(--ease), background .3s; }

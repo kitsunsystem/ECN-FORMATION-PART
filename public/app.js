@@ -17,9 +17,14 @@
   if (anim) G.registerPlugin(ST, Flip);
   const root = document.documentElement;
 
+  // Version officielle : profil injecté par le Worker après vérification du compte ECN (absent = maquette de démo)
+  const MEMBER = window.ECN_MEMBER || null;
+  const official = !!MEMBER;
+  const ECN_ADHESION_URL = 'https://ecn-group.com/dashboard.html';
+  const ns = official ? `ecnf:${MEMBER.id}:` : 'ecnf:'; // progression et favoris propres à chaque membre
   const store = {
-    get(k, d) { try { const v = localStorage.getItem('ecnf:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-    set(k, v) { try { localStorage.setItem('ecnf:' + k, JSON.stringify(v)); } catch { /* stockage indisponible : la démo reste utilisable */ } }
+    get(k, d) { try { const v = localStorage.getItem(ns + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(ns + k, JSON.stringify(v)); } catch { /* stockage indisponible : la page reste utilisable */ } }
   };
 
   /* ---------- Données ---------- */
@@ -85,13 +90,14 @@
   };
 
   const TIERS = {
-    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Socle de formations de base inclus dans votre pack.', eyebrow: 'Pack Initié · Accès essentiel', hours: 3, certs: 0, toast: 'Mode Pack Initié : accès limité aux formations de base' },
-    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Vous avez accès à l’ensemble du catalogue.', eyebrow: 'Pass Illimité · Actif', hours: 14, certs: 2, toast: 'Mode Membre : accès premium à tout le catalogue' },
-    fondateur: { name: 'Cercle Fondateur', tag: 'Fondateur', desc: 'Accès total, avant-premières et cercle privé.', eyebrow: 'Cercle Fondateur · Accès total', hours: 21, certs: 4, toast: 'Cercle Fondateur : accès total et thème signature' }
+    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Socle de formations de base inclus dans votre pack.', eyebrow: 'Pack Initié · Accès essentiel', toast: 'Mode Pack Initié : accès limité aux formations de base' },
+    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Vous avez accès à l’ensemble du catalogue.', eyebrow: 'Pass Illimité · Actif', toast: 'Mode Membre : accès premium à tout le catalogue' },
+    fondateur: { name: 'Cercle Fondateur', tag: 'Fondateur', desc: 'Accès total, avant-premières et cercle privé.', eyebrow: 'Cercle Fondateur · Accès total', toast: 'Cercle Fondateur : accès total et thème signature' }
   };
-  let tier = store.get('tier', 'membre');
-  if (!TIERS[tier]) tier = 'membre';
+  let tier = official ? MEMBER.tier : store.get('tier', 'membre');
+  if (!TIERS[tier]) tier = official ? 'initie' : 'membre';
   root.dataset.tier = tier;
+  root.classList.toggle('is-official', official);
   const canAccess = c => tier !== 'initie' || c.i === 1;
 
   // Progression démo (chapitres terminés par formation)
@@ -101,7 +107,8 @@
   const byKey = new Map(COURSES.map(c => [norm(c.t), c]));
   const prog = store.get('prog', null) || {};
   const order = store.get('order', null) || [];
-  if (!store.get('prog', null)) {
+  const lastSeen = store.get('last', {});
+  if (!official && !store.get('prog', null)) {
     SEED.forEach(([t, p]) => { const c = byKey.get(norm(t)); if (c) { prog[c.id] = Math.max(1, Math.round(p * c.ch / 100)); order.push(c.id); } });
   }
   const pct = c => Math.min(100, Math.round((prog[c.id] || 0) / c.ch * 100));
@@ -109,6 +116,7 @@
   const resumeList = () => order.map(id => COURSES[id]).filter(c => c && prog[c.id] && canAccess(c));
 
   /* ---------- Helpers UI ---------- */
+  const ago = ts => { const d = Math.floor((Date.now() - ts) / 864e5); return d <= 0 ? 'Aujourd’hui' : d === 1 ? 'Hier' : `Il y a ${d} jours`; };
   let toastTimer;
   function toast(msg) {
     const t = $('#toast');
@@ -331,7 +339,7 @@
       : `<button class="btn btn-gold" data-open-upgrade>${SVG.lock}<span>Débloquer avec le Pack Membre</span></button>
          <button class="btn btn-ghost" data-goto-tab="content">Aperçu du programme</button>`;
     $('#courseProgress').innerHTML = ok
-      ? `${ring(p)}<dl><div><dt>Progression</dt><dd>${done} / ${c.ch} chapitres</dd></div><div><dt>Dernière activité</dt><dd>${done ? `Il y a ${(c.id % 5) + 2} jours` : '—'}</dd></div><div><dt>Attestation</dt><dd>${p === 100 ? 'Disponible' : 'À 100 %'}</dd></div></dl><p class="next">Prochain chapitre<b>${esc(nextLesson(c))}</b></p>`
+      ? `${ring(p)}<dl><div><dt>Progression</dt><dd>${done} / ${c.ch} chapitres</dd></div><div><dt>Dernière activité</dt><dd>${lastSeen[c.id] ? ago(lastSeen[c.id]) : done && !official ? `Il y a ${(c.id % 5) + 2} jours` : '—'}</dd></div><div><dt>Attestation</dt><dd>${p === 100 ? 'Disponible' : 'À 100 %'}</dd></div></dl><p class="next">Prochain chapitre<b>${esc(nextLesson(c))}</b></p>`
       : `<div class="lock-ico big">${SVG.lock}</div><p class="locked-txt">Cette formation fait partie du catalogue complet, réservé aux packs <b>Membre</b> et <b>Cercle Fondateur</b>.</p>`;
 
     $('#panelAbout').innerHTML = `<div class="about-grid">
@@ -373,7 +381,7 @@
     if (anim && animate) G.fromTo(`.tab-panel[data-panel="${name}"] > *`, { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: .7, stagger: .05, ease: 'expo.out' });
   }
 
-  const rectInset = r => `inset(${r.top}px ${innerWidth - r.right}px ${innerHeight - r.bottom}px ${r.left}px round 22px)`;
+  // Ouverture simple : fondu + légère montée du contenu (plus de découpe depuis la carte)
   function openCourse(c, fromEl) {
     fillCourse(c);
     lastFrom = fromEl || null;
@@ -384,12 +392,9 @@
     window.dispatchEvent(new CustomEvent('ecn:pause', { detail: true }));
     setTab('about', false);
     if (anim) {
-      const from = fromEl ? rectInset(fromEl.getBoundingClientRect()) : 'inset(50% 50% 50% 50% round 22px)';
-      G.fromTo(el, { clipPath: from }, { clipPath: 'inset(0px 0px 0px 0px round 0px)', duration: 1, ease: 'expo.inOut' });
-      G.fromTo('#courseMedia > *', { scale: 1.5 }, { scale: 1.1, duration: 1.8, ease: 'expo.out' });
-      G.fromTo('.course-head > *', { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: .06, delay: .45, ease: 'expo.out' });
-      G.fromTo('.course-progress', { x: lite ? 0 : 60, y: lite ? 30 : 0, opacity: 0, rotateY: lite ? 0 : -25 }, { x: 0, opacity: 1, rotateY: 0, duration: 1.1, delay: .6, ease: 'expo.out' });
-      G.fromTo('.tabs, .tab-panels', { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, delay: .75, ease: 'expo.out' });
+      G.killTweensOf([el, '.course-scroll']);
+      G.fromTo(el, { opacity: 0 }, { opacity: 1, duration: .35, ease: 'power2.out' });
+      G.fromTo('.course-scroll', { y: 24 }, { y: 0, duration: .55, ease: 'power3.out', clearProps: 'transform' });
     }
     $('[data-close-course]').focus({ preventScroll: true });
   }
@@ -404,9 +409,9 @@
       if (lastFrom && document.contains(lastFrom)) lastFrom.focus({ preventScroll: true });
     };
     if (!anim) return done();
-    const r = lastFrom && document.contains(lastFrom) && lastFrom.offsetParent ? lastFrom.getBoundingClientRect() : null;
-    const visible = r && r.bottom > 0 && r.top < innerHeight;
-    G.to(el, { clipPath: visible ? rectInset(r) : 'inset(50% 50% 50% 50% round 22px)', duration: .8, ease: 'expo.inOut', onComplete: done });
+    G.killTweensOf([el, '.course-scroll']);
+    G.to('.course-scroll', { y: 16, duration: .25, ease: 'power2.in', clearProps: 'transform' });
+    G.to(el, { opacity: 0, duration: .25, ease: 'power2.in', onComplete: () => { G.set(el, { clearProps: 'opacity' }); done(); } });
   }
 
   /* ---------- Lecteur ---------- */
@@ -440,8 +445,10 @@
     if (!c) return;
     prog[c.id] = Math.min(c.ch, (prog[c.id] || 0) + 1);
     if (!order.includes(c.id)) order.unshift(c.id);
+    lastSeen[c.id] = Date.now();
     store.set('prog', prog);
     store.set('order', order);
+    store.set('last', lastSeen);
     burst(btn);
     toast(`Chapitre validé · progression ${pct(c)} %`);
     refreshCardProgress(c);
@@ -514,7 +521,7 @@
     if (current) fillCourse(current);
   }
   function setTier(t, x = innerWidth / 2, y = 40) {
-    if (!TIERS[t] || t === tier) return;
+    if (official || !TIERS[t] || t === tier) return; // le pack réel vient de la base ECN
     const apply = () => {
       tier = t;
       root.dataset.tier = t;
@@ -536,7 +543,7 @@
   }
 
   function countStats() {
-    const vals = { statAccess: COURSES.filter(canAccess).length, statProgress: resumeList().length, statHours: TIERS[tier].hours, statCerts: TIERS[tier].certs };
+    const vals = { statAccess: COURSES.filter(canAccess).length, statProgress: resumeList().length, statHours: Math.round(COURSES.reduce((n, c) => n + (prog[c.id] || 0), 0) * 6 / 60), statCerts: COURSES.filter(c => pct(c) === 100).length }; // ~6 min par chapitre
     Object.entries(vals).forEach(([id, v]) => {
       const el = $('#' + id);
       if (!anim) { el.textContent = v; return; }
@@ -679,6 +686,7 @@
     if (s) { scrollToEl(s.dataset.scrollto === 'top' ? 0 : s.dataset.scrollto); return; }
     if (e.target.closest('[data-open-upgrade]')) { openModal('#upgrade'); return; }
     const st = e.target.closest('[data-set-tier]');
+    if (st && official) { if (st.dataset.setTier !== tier) window.location.href = ECN_ADHESION_URL; return; }
     if (st) {
       const r = st.getBoundingClientRect();
       closeModal($('#upgrade'), () => setTier(st.dataset.setTier, r.left + r.width / 2, r.top + r.height / 2));
@@ -780,6 +788,19 @@
   }
 
   /* ---------- Démarrage ---------- */
+  if (official) {
+    const first = MEMBER.firstName || 'Membre', full = `${MEMBER.firstName} ${MEMBER.lastName}`.trim() || first;
+    $('#heroName').textContent = first;
+    $('#passHolder').textContent = full;
+    $('#passNum').textContent = MEMBER.memberCode ? `ECN · ${MEMBER.memberCode}` : 'ECN Group';
+    $('#avatarInitials').textContent = ((MEMBER.firstName || ' ')[0] + (MEMBER.lastName || ' ')[0]).trim().toUpperCase() || 'EC';
+    $('#avatar').href = '/logout';
+    $('#avatar').title = `${full} · Se déconnecter`;
+    $$('[data-set-tier]').forEach(b => {
+      b.textContent = b.dataset.setTier === tier ? 'Votre pack actuel' : 'Faire évoluer mon adhésion';
+      b.disabled = b.dataset.setTier === tier;
+    });
+  }
   renderCats();
   updateTierUI();
   applyFilters(false);

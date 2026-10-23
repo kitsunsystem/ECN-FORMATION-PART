@@ -57,7 +57,7 @@
       <button data-tier="fondateur" aria-pressed="false">Fondateur</button>
       <i class="tier-pill" aria-hidden="true"></i>
     </div>
-    <div class="avatar" title="Alex Martin"><span>AM</span></div>
+    <a class="avatar" id="avatar" title="Alex Martin"><span id="avatarInitials">AM</span></a>
   </header>
 
   <!-- Barre d'onglets mobile -->
@@ -74,7 +74,7 @@
       <section class="hero">
         <div class="hero-copy">
           <p class="eyebrow"><span class="dot"></span><span id="heroEyebrow">Pass Illimité · Actif</span></p>
-          <h1 class="split">Bienvenue dans votre espace de formation, <span class="grad">Alex</span></h1>
+          <h1 class="split">Bienvenue dans votre espace de formation, <span class="grad" id="heroName">Alex</span></h1>
           <p class="hero-sub">Que souhaitez-vous apprendre aujourd’hui&nbsp;?</p>
           <form class="search" id="heroSearch" role="search">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -100,8 +100,8 @@
             <p class="pass-name" id="passName">Pack Membre</p>
             <p class="pass-desc" id="passDesc">Vous avez accès à l’ensemble du catalogue.</p>
             <div class="pass-bottom">
-              <span>Alex Martin</span>
-              <span class="pass-num">ECN · 0427 · 2026</span>
+              <span id="passHolder">Alex Martin</span>
+              <span class="pass-num" id="passNum">ECN · 0427 · 2026</span>
             </div>
           </div>
           <p class="pass-powered">Propulsé par <b>LE CUBE Formations</b></p>
@@ -230,7 +230,10 @@
     <footer class="foot">
       <div class="foot-brand"><img src="assets/logo-ecn.webp" alt="" width="34" height="34"><span>Espace formation <b>ECN Group</b> · Propulsé par LE CUBE Formations</span></div>
       <p>Maquette démo · catalogue LE CUBE Formations · © 2026 ECN Group</p>
-      <button class="btn btn-ghost sm" data-scrollto="top">Retour en haut ↑</button>
+      <div class="foot-actions">
+        <a class="btn btn-ghost sm logout" href="/logout">Se déconnecter</a>
+        <button class="btn btn-ghost sm" data-scrollto="top">Retour en haut ↑</button>
+      </div>
     </footer>
   </div>
 

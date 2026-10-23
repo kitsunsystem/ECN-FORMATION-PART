@@ -1,8 +1,13 @@
-// Cloudflare Workers : site 100 % statique, servi depuis public/
+// Cloudflare Workers : le Worker (src/worker.js) contrôle chaque requête avant de servir public/
+// Secrets à définir dans Cloudflare : SUPABASE_SERVICE_ROLE_KEY, SESSION_SECRET (voir README)
 {
   "name": "ecn-formation-part",
+  "main": "src/worker.js",
   "compatibility_date": "2026-09-01",
   "assets": {
-    "directory": "./public"
-  }
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "observability": { "enabled": true }
 }
