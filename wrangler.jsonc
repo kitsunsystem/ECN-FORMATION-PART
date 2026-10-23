@@ -9,5 +9,7 @@
     "binding": "ASSETS",
     "run_worker_first": true
   },
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // garde les variables saisies dans le tableau de bord Cloudflare lors des déploiements depuis GitHub
+  "keep_vars": true
 }

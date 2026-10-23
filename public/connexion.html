@@ -58,9 +58,12 @@
         config: 'L’Espace Formation est en cours de configuration. Réessayez plus tard.',
         indisponible: 'Service momentanément indisponible. Réessayez dans quelques instants.'
       };
-      var e = new URLSearchParams(location.search).get('e');
+      var q = new URLSearchParams(location.search), e = q.get('e');
       var el = document.getElementById('msg');
       if (MSG[e]) { el.textContent = MSG[e]; el.hidden = false; }
+      // aide à la mise en service : noms des variables Cloudflare encore absentes
+      var manque = (q.get('manque') || '').split(',').filter(function (v) { return /^[A-Z_]+$/.test(v); });
+      if (e === 'config' && manque.length) el.textContent += ' Variable(s) à ajouter sur le Worker (type Secret) : ' + manque.join(', ') + '.';
     })();
   </script>
 </body>

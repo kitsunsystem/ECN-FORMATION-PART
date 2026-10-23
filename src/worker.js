@@ -29,7 +29,13 @@ export function formationTier(u) {
   return u.pack_status === 'active' ? TIERS[u.pack] || null : null;
 }
 
-const configured = env => Boolean(env.SUPABASE_SERVICE_ROLE_KEY && String(env.SESSION_SECRET || '').length >= 32);
+// Noms (jamais les valeurs) des variables absentes, affichés sur /connexion pour guider la mise en service
+const missingVars = env => [
+  !String(env.SUPABASE_SERVICE_ROLE_KEY || '').trim() && 'SUPABASE_SERVICE_ROLE_KEY',
+  String(env.SESSION_SECRET || '').trim().length < 32 && 'SESSION_SECRET'
+].filter(Boolean);
+const configured = env => missingVars(env).length === 0;
+const configRedirect = env => redirect(`/connexion?e=config&manque=${missingVars(env).join(',')}`);
 
 async function sb(env, path, { method = 'GET', body, prefer } = {}) {
   const url = String(env.SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
@@ -91,7 +97,7 @@ function withHeaders(res, extra) {
 
 /** Retour depuis ecn-group.com : le ticket est supprimé en le lisant (usage unique, 2 min). */
 async function callback(env, url) {
-  if (!configured(env)) return redirect('/connexion?e=config');
+  if (!configured(env)) return configRedirect(env);
   const t = url.searchParams.get('t') || '';
   if (!/^[A-Za-z0-9_-]{43}$/.test(t)) return redirect('/connexion?e=lien');
   const hash = await sha256Hex(t);
@@ -131,11 +137,13 @@ export default {
     try {
       if (path === '/auth/callback') return await callback(env, url);
       if (path === '/logout') return redirect('/connexion?e=deconnecte', { 'Set-Cookie': clearCookie });
+      // message « configuration » périmé une fois les variables en place : on le retire
+      if (path === '/connexion' && url.searchParams.get('e') === 'config' && configured(env)) return redirect('/connexion');
       if (PUBLIC_PATHS.has(path)) return withHeaders(await env.ASSETS.fetch(request), {});
       const uid = await readSession(request, env);
       if (!uid) {
         return wantsPage(request, path)
-          ? redirect(configured(env) ? '/connexion' : '/connexion?e=config')
+          ? (configured(env) ? redirect('/connexion') : configRedirect(env))
           : new Response('Accès réservé aux membres ECN Group.', { status: 401, headers: SECURITY_HEADERS });
       }
       if (path === '/' || path === '/index.html') return await app(request, env, uid);
