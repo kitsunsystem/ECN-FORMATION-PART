@@ -56,8 +56,8 @@
   };
 
   const TIERS = {
-    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Catalogue LE CUBE Formations inclus.', eyebrow: 'Pack Initié · Catalogue LE CUBE', toast: 'Mode Pack Initié : catalogue LE CUBE, formations ECN en aperçu' },
-    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Catalogue LE CUBE et formations ECN Membre.', eyebrow: 'Pack Membre · Accès complet', toast: 'Mode Membre : catalogue LE CUBE et formations ECN Membre' },
+    initie: { name: 'Pack Initié', tag: 'Accès Essentiel', desc: 'Formations ECN Initié incluses.', eyebrow: 'Pack Initié · Formations ECN Initié', toast: 'Mode Pack Initié : formations ECN Initié, formations ECN Membre en aperçu' },
+    membre: { name: 'Pack Membre', tag: 'Golden Card', desc: 'Formations ECN Initié et ECN Membre.', eyebrow: 'Pack Membre · Accès complet', toast: 'Mode Membre : formations ECN Initié et ECN Membre' },
     fondateur: { name: 'Cercle Fondateur', tag: 'Fondateur', desc: 'Accès total, avant-premières et cercle privé.', eyebrow: 'Cercle Fondateur · Accès total', toast: 'Cercle Fondateur : accès total et thème signature' }
   };
   let tier = official ? MEMBER.tier : store.get('tier', 'membre');
@@ -95,7 +95,7 @@
         <div class="card-body">
           <p class="card-cat">${esc(c.c)}</p>
           <h3><a class="card-link" href="${esc(cubeUrl(c))}" target="_blank" rel="noopener" data-open="${c.id}">${esc(c.t)}</a></h3>
-          <div class="card-meta">${meta}<span class="ext">LE CUBE ${SVG.ext}</span></div>
+          <div class="card-meta">${meta}<span class="ext">Ouvrir ${SVG.ext}</span></div>
         </div>
       </div>
     </article>`;
@@ -258,7 +258,7 @@
       G.fromTo(m.querySelector('.upgrade-box'), { y: lite ? 40 : 80, scale: .92, rotateX: lite ? 0 : 14, opacity: 0, transformPerspective: 1200 }, { y: 0, scale: 1, rotateX: 0, opacity: 1, duration: .9, ease: 'expo.out' });
       G.fromTo(m.querySelectorAll('.plan'), { y: lite ? 24 : 50, opacity: 0, rotateY: lite ? 0 : -20 }, { y: 0, opacity: 1, rotateY: 0, duration: 1, stagger: .08, delay: .15, ease: 'expo.out' });
     }
-    m.querySelector('.close-btn').focus({ preventScroll: true });
+    (m.querySelector('input') || m.querySelector('.close-btn')).focus({ preventScroll: true });
   }
   function closeModal(m, then) {
     if (!m || m.hidden) return then && then();
@@ -351,9 +351,10 @@
 
   /* ---------- FAQ ---------- */
   const FAQ = [
-    ['Comment suivre une formation LE CUBE ?', 'Cliquez sur une formation : elle s’ouvre sur lecube.biz, la plateforme de notre partenaire LE CUBE Formations. Connectez-vous-y avec vos identifiants LE CUBE pour la suivre.'],
-    ['Où retrouver ma progression et mes attestations ?', 'Sur LE CUBE Formations : votre avancement et vos attestations y sont enregistrés. Ici, la rubrique « Récemment consultées » vous permet d’y revenir en un clic.'],
-    ['Que comprend mon pack ECN Group ?', 'Le Pack Initié donne accès à tout le catalogue LE CUBE. Les packs Membre (Golden Card) et Cercle Fondateur y ajoutent les formations exclusives ECN Membre.'],
+    ['Comment suivre une formation ECN Initié ?', 'Cliquez sur une formation : elle s’ouvre sur lecube.biz, la plateforme de notre partenaire LE CUBE Formations. Connectez-vous-y avec vos identifiants LE CUBE pour la suivre.'],
+    ['Où retrouver ma progression et mes attestations ?', 'Sur votre plateforme de formation : votre avancement et vos attestations y sont enregistrés. Ici, la rubrique « Récemment consultées » vous permet d’y revenir en un clic.'],
+    ['Comment modifier l’e-mail de mon compte formation ?', 'Cliquez sur votre profil en haut à droite, puis sur « Modifier » à côté de votre compte formation.'],
+    ['Que comprend mon pack ECN Group ?', 'Le Pack Initié donne accès à toutes les formations ECN Initié. Les packs Membre (Golden Card) et Cercle Fondateur y ajoutent les formations exclusives ECN Membre.'],
     ['Quand arrivent les formations ECN Membre ?', 'Elles sont en cours de préparation. Elles apparaîtront automatiquement dans la rubrique « Formations ECN Membre » dès leur mise en ligne.'],
     ['Comment passer du Pack Initié au Pack Membre ?', 'Depuis votre espace membre ECN Group, rubrique Adhésion. Les formations ECN Membre s’ouvrent dès la confirmation de votre règlement.']
   ];
@@ -454,6 +455,41 @@
     }
     if (e.target.closest('[data-close-modal]')) closeModal(e.target.closest('.modal'));
   });
+  // Compte formation : à la 1re entrée, le membre crée son compte sur la plateforme partenaire puis saisit son e-mail,
+  // enregistré sur son compte ECN par le Worker (démo : gardé dans le navigateur)
+  let formationEmail = official ? MEMBER.lecubeEmail || '' : store.get('lecube', '');
+  const showFormationEmail = () => { $('#pmLecube').textContent = formationEmail || 'Non associé'; };
+  function openOnboard(required) {
+    $('#onboard').classList.toggle('is-required', required);
+    $('#obEmail').value = formationEmail;
+    $('#obError').hidden = true;
+    openModal('#onboard');
+  }
+  $('#obForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = $('#obEmail').value.trim().toLowerCase(), err = $('#obError'), btn = e.submitter || $('#obForm button');
+    const fail = msg => { err.textContent = msg; err.hidden = false; };
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail('Saisissez une adresse e-mail valide.');
+    btn.disabled = true;
+    try {
+      if (official) {
+        const res = await fetch('/api/lecube-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) return fail(data.error || 'Enregistrement impossible pour le moment. Réessayez.');
+      } else store.set('lecube', email);
+      formationEmail = email;
+      showFormationEmail();
+      $('#onboard').classList.remove('is-required');
+      closeModal($('#onboard'));
+      toast('Compte formation associé à votre compte ECN');
+    } catch {
+      fail('Connexion impossible. Vérifiez votre réseau et réessayez.');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  $('#pmLecubeEdit').addEventListener('click', () => { setProfile(false); openOnboard(false); });
+
   // Profil ECN : l'avatar ouvre la fiche (identité, formule, déconnexion en bas)
   const avatar = $('#avatar'), profileMenu = $('#profileMenu');
   const setProfile = open => { profileMenu.hidden = !open; avatar.setAttribute('aria-expanded', open); };
@@ -464,7 +500,7 @@
     if (e.key !== 'Escape') return;
     if (!profileMenu.hidden) { setProfile(false); avatar.focus(); return; }
     const m = $$('.modal').find(x => !x.hidden);
-    if (m) closeModal(m);
+    if (m && !m.classList.contains('is-required')) closeModal(m);
   });
   addEventListener('resize', placePill);
 
@@ -575,14 +611,17 @@
   }
   renderCats();
   renderRecent();
+  showFormationEmail();
   updateTierUI();
   applyFilters(false);
   setFavCount();
   $$('.split').forEach(split);
 
+  const onboardIfNeeded = () => { if (!formationEmail) openOnboard(true); };
   if (!anim) {
     $('#loader').remove();
     countStats();
+    onboardIfNeeded();
   } else {
     const introTl = intro();
     reveals();
@@ -593,7 +632,8 @@
       .to('.loader-ring circle', { strokeDashoffset: 0, duration: 1.5, ease: 'power2.inOut' }, 0)
       .to('.loader-core', { scale: 1.12, duration: .5, ease: 'power2.out' }, 1.25)
       .to('#loader', { clipPath: 'inset(0% 0% 100% 0%)', duration: 1.15, ease: 'expo.inOut', onComplete: () => $('#loader')?.remove() }, '+=.05')
-      .add(() => introTl.play(), '-=.75');
+      .add(() => introTl.play(), '-=.75')
+      .add(onboardIfNeeded, '+=.3');
   }
   // filet de sécurité si une animation ne se termine pas
   setTimeout(() => { const l = $('#loader'); if (l) l.remove(); }, 6000);

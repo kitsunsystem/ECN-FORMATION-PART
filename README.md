@@ -11,6 +11,8 @@ Aucune page, feuille de style ni donnée n'est servie sans session (le Worker `s
 3. Le membre arrive sur `/auth/callback?t=…`. Le Worker consomme le ticket dans la base, enregistre `users.formation_linked_at` (compte lié) et ouvre une session par cookie signé (`HttpOnly`, `Secure`, 7 jours).
 4. À chaque chargement de page, le pack est **relu dans la base** : une adhésion suspendue ou expirée coupe l'accès aussitôt.
 
+**Première entrée** : tant que le membre n'a pas associé son compte formation, un écran l'invite à créer ce compte via le lien d'inscription partenaire, puis à saisir l'e-mail utilisé. Le Worker l'enregistre dans `users.formation_lecube_email` (`POST /api/lecube-email`), et cet e-mail s'affiche dans le profil, en haut à droite. Il est modifiable depuis le profil.
+
 Sans session, le visiteur voit `/connexion`. Le bouton « Se connecter avec ECN Group » le ramène ici après sa connexion sur ecn-group.com.
 
 | `users.pack` (actif) | Formations LE CUBE (162) | Formations ECN Membre | Thème |
@@ -37,7 +39,7 @@ Sans `u`, la carte affiche « bientôt disponible ». Les Initiés voient ces fo
 
 ## Mise en production
 
-1. **Supabase** : exécuter une fois `supabase_formation_2026_10_23.sql` (dans le repo ecn-groups).
+1. **Supabase** : exécuter une fois `supabase_formation_2026_10_23.sql`, puis `supabase_formation_compte_2026_10_23.sql` (dans le repo ecn-groups). Sans le second fichier, le site reste accessible, mais l'e-mail du compte formation ne peut pas être enregistré.
 2. **Cloudflare, Worker `ecn-formation-part`** → Settings → Variables and Secrets :
    - `SUPABASE_SERVICE_ROLE_KEY` (secret) : la même clé service que ecn-group.com
    - `SESSION_SECRET` (secret) : 32 caractères aléatoires ou plus, par exemple le résultat de `openssl rand -base64 48`

@@ -54,7 +54,17 @@ async function sb(env, path, { method = 'GET', body, prefer } = {}) {
   return res.status === 204 ? null : res.json().catch(() => null);
 }
 
-const member = async (env, id) => ((await sb(env, `users?select=id,email,first_name,last_name,member_code,status,role,pack,pack_status,formation_linked_at&id=eq.${encodeURIComponent(id)}`)) || [])[0] || null;
+const MEMBER_COLS = 'id,email,first_name,last_name,member_code,status,role,pack,pack_status,formation_linked_at';
+async function member(env, id) {
+  const get = cols => sb(env, `users?select=${cols}&id=eq.${encodeURIComponent(id)}`);
+  let rows;
+  try { rows = await get(`${MEMBER_COLS},formation_lecube_email`); }
+  catch (err) {
+    if (!/→ 400$/.test(err.message)) throw err;
+    rows = await get(MEMBER_COLS); // colonne formation_lecube_email pas encore créée (SQL à exécuter)
+  }
+  return (rows || [])[0] || null;
+}
 
 async function hmacKey(env) {
   return crypto.subtle.importKey('raw', enc.encode(env.SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
@@ -121,12 +131,33 @@ async function app(request, env, uid) {
   // requête neuve, sans en-têtes conditionnels : jamais de 304 vers une ancienne page sans profil
   const page = await env.ASSETS.fetch(new Request(new URL('/', request.url), { headers: { Accept: 'text/html' } }));
   const data = JSON.stringify({
-    id: user.id, tier, firstName: user.first_name || '', lastName: user.last_name || '', email: user.email || '', memberCode: user.member_code || ''
+    id: user.id, tier, firstName: user.first_name || '', lastName: user.last_name || '', email: user.email || '', memberCode: user.member_code || '',
+    lecubeEmail: user.formation_lecube_email || ''
   }).replace(/</g, '\\u003c');
   const html = new HTMLRewriter()
     .on('head', { element(el) { el.append(`<script>window.ECN_MEMBER=${data};</script>`, { html: true }); } })
     .transform(page);
   return withHeaders(html, { 'Cache-Control': 'no-store' });
+}
+
+const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...SECURITY_HEADERS } });
+
+/** 1re entrée : e-mail du compte de la plateforme de formation partenaire, rattaché au compte ECN (users.formation_lecube_email). */
+async function saveLecubeEmail(request, env, uid) {
+  if (request.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== new URL(request.url).origin) return json({ ok: false, error: 'Origine non autorisée.' }, 403);
+  const body = await request.json().catch(() => ({}));
+  const email = String(body.email || '').trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, error: 'Adresse e-mail invalide.' }, 400);
+  if (!formationTier(await member(env, uid))) return json({ ok: false, error: 'Votre adhésion ne donne pas accès à l’Espace Formation.' }, 403);
+  try {
+    await sb(env, `users?id=eq.${encodeURIComponent(uid)}`, { method: 'PATCH', prefer: 'return=minimal', body: { formation_lecube_email: email } });
+  } catch (err) {
+    console.error('[formation] e-mail formation', err);
+    return json({ ok: false, error: 'Enregistrement impossible pour le moment. Réessayez dans quelques instants.' }, 503);
+  }
+  return json({ ok: true, email });
 }
 
 const wantsPage = (request, path) => path === '/' || path.endsWith('.html') || (request.headers.get('Accept') || '').includes('text/html');
@@ -147,6 +178,7 @@ export default {
           ? (configured(env) ? redirect('/connexion') : configRedirect(env))
           : new Response('Accès réservé aux membres ECN Group.', { status: 401, headers: SECURITY_HEADERS });
       }
+      if (path === '/api/lecube-email') return await saveLecubeEmail(request, env, uid);
       if (path === '/' || path === '/index.html') return await app(request, env, uid);
       return withHeaders(await env.ASSETS.fetch(request), {});
     } catch (err) {

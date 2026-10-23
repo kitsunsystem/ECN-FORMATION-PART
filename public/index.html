@@ -6,7 +6,7 @@
   <!-- même verrou que le site principal : iOS ignore user-scalable=no, on bloque pincement et double-tap -->
   <script>if(matchMedia('(pointer:coarse)').matches){document.documentElement.style.touchAction='manipulation';['gesturestart','gesturechange'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false})}</script>
   <title>Espace Formation · ECN Group</title>
-  <meta name="description" content="Maquette démo de l'espace Formation ECN Group : 160+ formations LE CUBE, accès limité Pack Initié, accès total Membre et Cercle Fondateur.">
+  <meta name="description" content="Espace Formation ECN Group : formations ECN Initié pour tous les packs, formations ECN Membre pour les Membres et le Cercle Fondateur.">
   <meta name="theme-color" content="#050608">
   <link rel="icon" href="assets/logo-ecn.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -70,6 +70,10 @@
           <small id="pmCode">ECN · 0427 · 2026</small>
         </div>
       </div>
+      <div class="pm-formation">
+        <span class="pm-label">Compte formation</span>
+        <div><b id="pmLecube">Non associé</b><button class="pm-edit" id="pmLecubeEdit" type="button">Modifier</button></div>
+      </div>
       <div class="pm-pack">
         <span class="pm-label">Ma formule</span>
         <span class="pm-badge" id="pmPack">Pack Membre</span>
@@ -107,8 +111,8 @@
             <button class="btn btn-gold magnetic" type="submit">Rechercher</button>
           </form>
           <dl class="stats">
-            <div><dt>Formations LE CUBE</dt><dd><b id="statCube">0</b></dd></div>
-            <div><dt>Formations ECN</dt><dd><b id="statEcn">0</b></dd></div>
+            <div><dt>Formations ECN Initié</dt><dd><b id="statCube">0</b></dd></div>
+            <div><dt>Formations ECN Membre</dt><dd><b id="statEcn">0</b></dd></div>
             <div><dt>Catégories</dt><dd><b id="statCats">0</b></dd></div>
             <div><dt>Mes favoris</dt><dd><b id="statFavs">0</b></dd></div>
           </dl>
@@ -129,7 +133,7 @@
               <span class="pass-num" id="passNum">ECN · 0427 · 2026</span>
             </div>
           </div>
-          <p class="pass-powered">Propulsé par <b>LE CUBE Formations</b></p>
+          <p class="pass-powered"><b>ECN Group</b> · Espace Formation</p>
         </div>
 
         <button class="scroll-hint" data-scrollto="#cats" aria-label="Défiler vers les catégories"><span></span></button>
@@ -175,9 +179,9 @@
       <section class="block" id="catalog">
         <header class="block-head row">
           <div>
-            <p class="eyebrow">04 — Catalogue LE CUBE</p>
-            <h2 class="split">Formations LE CUBE</h2>
-            <p class="lead">Incluses dans tous les packs. Chaque formation s’ouvre sur lecube.biz, chez notre partenaire LE CUBE Formations.</p>
+            <p class="eyebrow">04 — Catalogue ECN Initié</p>
+            <h2 class="split">Formations ECN Initié</h2>
+            <p class="lead">Incluses dans tous les packs : Initié, Membre et Cercle Fondateur. Chaque formation s’ouvre en un clic sur votre plateforme de formation.</p>
           </div>
           <p class="result-count" aria-live="polite"><b id="resultCount">162</b> formations</p>
         </header>
@@ -206,8 +210,8 @@
       </section>
 
       <section class="block perks">
-        <div class="perk reveal"><b>01</b><h4>Accès direct</h4><p>Chaque formation LE CUBE s’ouvre en un clic sur lecube.biz.</p></div>
-        <div class="perk reveal"><b>02</b><h4>Attestation de formation</h4><p>Délivrée par LE CUBE une fois la formation terminée.</p></div>
+        <div class="perk reveal"><b>01</b><h4>Accès direct</h4><p>Chaque formation s’ouvre en un clic sur votre plateforme de formation.</p></div>
+        <div class="perk reveal"><b>02</b><h4>Attestation de formation</h4><p>Délivrée une fois la formation terminée.</p></div>
         <div class="perk reveal"><b>03</b><h4>Sur tous vos appareils</h4><p>Ordinateur, tablette et mobile, en vidéo HD.</p></div>
         <div class="perk reveal"><b>04</b><h4>Exclusivités ECN</h4><p>Formations ECN Membre réservées aux Membres et au Cercle Fondateur.</p></div>
       </section>
@@ -251,8 +255,8 @@
     </main>
 
     <footer class="foot">
-      <div class="foot-brand"><img src="assets/logo-ecn.webp" alt="" width="34" height="34"><span>Espace formation <b>ECN Group</b> · Propulsé par LE CUBE Formations</span></div>
-      <p>Catalogue LE CUBE Formations · © 2026 ECN Group</p>
+      <div class="foot-brand"><img src="assets/logo-ecn.webp" alt="" width="34" height="34"><span>Espace Formation <b>ECN Group</b></span></div>
+      <p>© 2026 ECN Group · Tous droits réservés</p>
       <div class="foot-actions">
         <a class="btn btn-ghost sm logout" href="/logout">Se déconnecter</a>
         <button class="btn btn-ghost sm" data-scrollto="top">Retour en haut ↑</button>
@@ -270,13 +274,13 @@
       <div class="plans">
         <article class="plan" data-plan="initie">
           <h4>Pack Initié</h4><p class="price">500 €<small>/ an</small></p>
-          <ul><li>Catalogue LE CUBE : 160+ formations</li><li>Communauté en ligne</li><li>Webinaires mensuels</li><li class="no">Formations ECN Membre</li><li class="no">Thème premium</li></ul>
+          <ul><li>Formations ECN Initié : 160+</li><li>Communauté en ligne</li><li>Webinaires mensuels</li><li class="no">Formations ECN Membre</li><li class="no">Thème premium</li></ul>
           <button class="btn btn-ghost sm" data-set-tier="initie">Voir en Initié</button>
         </article>
         <article class="plan featured" data-plan="membre">
           <span class="plan-badge">Recommandé</span>
           <h4>Membre · Golden Card</h4><p class="price">1 500 €<small>/ an</small></p>
-          <ul><li>Catalogue LE CUBE : 160+ formations</li><li>Formations ECN Membre</li><li>Coachs &amp; rendez-vous business</li><li>Nouveautés chaque mois</li><li>Thème premium</li></ul>
+          <ul><li>Formations ECN Initié : 160+</li><li>Formations ECN Membre</li><li>Coachs &amp; rendez-vous business</li><li>Nouveautés chaque mois</li><li>Thème premium</li></ul>
           <button class="btn btn-gold sm" data-set-tier="membre">Passer Membre (démo)</button>
         </article>
         <article class="plan" data-plan="fondateur">
@@ -285,6 +289,37 @@
           <button class="btn btn-ghost sm" data-set-tier="fondateur">Rejoindre le Cercle (démo)</button>
         </article>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ 1re ENTRÉE : association du compte formation ============ -->
+  <div class="modal" id="onboard" role="dialog" aria-modal="true" aria-labelledby="obTitle" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="upgrade-box onboard-box" data-lenis-prevent>
+      <button class="close-btn" data-close-modal aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      <img class="ob-logo" src="assets/logo-ecn.webp" alt="" width="64" height="64">
+      <p class="eyebrow">Première connexion</p>
+      <h2 id="obTitle">Activez votre accès formation</h2>
+      <p class="lead">Deux étapes, à faire une seule fois.</p>
+      <ol class="ob-steps">
+        <li>
+          <b>Créez votre compte formation</b>
+          <span>L’inscription prend quelques instants. Gardez bien l’adresse e-mail que vous utilisez.</span>
+          <a class="btn btn-ghost sm" href="https://lecube.biz/rejoindre/13358x12mx42ea2bd17c3502a7a65f/" target="_blank" rel="noopener">Créer mon compte formation ↗</a>
+        </li>
+        <li>
+          <b>Associez-le à votre compte ECN</b>
+          <span>Saisissez l’e-mail utilisé pour créer votre compte formation, puis continuez.</span>
+          <form class="ob-form" id="obForm" novalidate>
+            <label class="field"><span>E-mail du compte formation</span>
+              <input id="obEmail" type="email" inputmode="email" autocomplete="email" placeholder="vous@exemple.com" required>
+            </label>
+            <p class="ob-error" id="obError" role="alert" hidden></p>
+            <button class="btn btn-gold" type="submit">Continuer</button>
+          </form>
+        </li>
+      </ol>
+      <a class="ob-logout" href="/logout">Se déconnecter</a>
     </div>
   </div>
 

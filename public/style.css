@@ -402,6 +402,31 @@ html.is-official .tier-switch { display: none; }
 .pm-logout { width: 100%; }
 .pm-demo { font-size: 12px; color: var(--tx-3); text-align: center; }
 html.is-official .pm-demo { display: none; }
+.pm-formation { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.pm-formation div { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.pm-formation b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; font-weight: 600; }
+.pm-edit { flex-shrink: 0; padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; color: var(--a-l); border: 1px solid rgba(var(--a-rgb), .35); }
+.pm-edit:hover { background: rgba(var(--a-rgb), .12); }
+
+/* ---------- 1re entrée : association du compte formation ---------- */
+.onboard-box { width: min(560px, 100%); }
+.ob-logo { width: 64px; height: 64px; object-fit: contain; margin-bottom: 14px; }
+.onboard-box h2 { font-size: clamp(24px, 3vw, 34px); margin: 8px 0 6px; }
+.onboard-box .lead { margin-top: 0; }
+.ob-steps { list-style: none; counter-reset: ob; display: grid; gap: 12px; margin: 20px 0 14px; }
+.ob-steps li { position: relative; display: grid; gap: 8px; padding: 16px 16px 16px 58px; border-radius: 18px; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); }
+.ob-steps li::before { counter-increment: ob; content: counter(ob); position: absolute; left: 16px; top: 16px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 700; color: #120d02; background: var(--grad); }
+.ob-steps b { font-size: 16px; font-weight: 600; }
+.ob-steps span { font-size: 14px; color: var(--tx-2); }
+.ob-steps .btn { justify-self: start; margin-top: 4px; }
+.ob-form { display: grid; gap: 10px; margin-top: 4px; }
+.ob-form input { width: 100%; min-width: 0; }
+.ob-form .btn { justify-self: stretch; }
+.ob-error { font-size: 13px; color: #ffb4a8; }
+.ob-error[hidden] { display: none; }
+.ob-logout { display: none; text-align: center; font-size: 13px; color: var(--tx-3); }
+html.is-official .ob-logout { display: block; }
+#onboard.is-required .close-btn { display: none; }
 html.is-official .nav-links { margin-right: 0; }
 
 /* ---------- Bouton fermer (modales) ---------- */
