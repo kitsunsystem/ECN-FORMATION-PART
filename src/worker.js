@@ -35,7 +35,8 @@ const missingVars = env => [
   String(env.SESSION_SECRET || '').trim().length < 32 && 'SESSION_SECRET'
 ].filter(Boolean);
 const configured = env => missingVars(env).length === 0;
-const configRedirect = env => redirect(`/connexion?e=config&manque=${missingVars(env).join(',')}`);
+// + noms des variables reçues par cette version (repère une faute de frappe ou une variable posée sur un autre Worker)
+const configRedirect = env => redirect(`/connexion?e=config&manque=${missingVars(env).join(',')}&recues=${Object.keys(env).filter(k => /^[A-Za-z0-9_]{1,64}$/.test(k)).join(',')}`);
 
 async function sb(env, path, { method = 'GET', body, prefer } = {}) {
   const url = String(env.SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
