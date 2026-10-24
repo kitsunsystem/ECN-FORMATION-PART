@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- même verrou que le site principal : iOS ignore user-scalable=no, on bloque pincement et double-tap -->
+  <script>if(matchMedia('(pointer:coarse)').matches){document.documentElement.style.touchAction='manipulation';['gesturestart','gesturechange'].forEach(function(t){document.addEventListener(t,function(e){e.preventDefault()},{passive:false})});document.addEventListener('touchmove',function(e){if(e.touches.length>1)e.preventDefault()},{passive:false})}</script>
+  <title>ECN Formation Kids</title>
+  <meta name="description" content="ECN Formation Kids : l'espace privé des enfants des membres ECN Group, avec des formations dès 8, 10, 12 et 16 ans.">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#4cc3ff">
+  <link rel="icon" href="assets/logo-ecn.webp">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="kids.css">
+</head>
+<body>
+  <!-- Décor : nuages, bulles, étoiles -->
+  <div class="sky" aria-hidden="true">
+    <span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span>
+    <span class="bubble b1"></span><span class="bubble b2"></span><span class="bubble b3"></span><span class="bubble b4"></span><span class="bubble b5"></span><span class="bubble b6"></span>
+    <svg class="star s1" viewBox="0 0 24 24"><path d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z"/></svg>
+    <svg class="star s2" viewBox="0 0 24 24"><path d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z"/></svg>
+    <svg class="star s3" viewBox="0 0 24 24"><path d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z"/></svg>
+    <svg class="star s4" viewBox="0 0 24 24"><path d="m12 2 2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7z"/></svg>
+  </div>
+
+  <header class="top">
+    <a class="back" href="./">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      <span>Espace parent</span>
+    </a>
+    <div class="brand"><img src="assets/logo-ecn.webp" alt="" width="40" height="40"><span>ECN <b>Kids</b></span></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="hello" id="hello">Bienvenue !</p>
+        <h1><span class="small">ECN Formation</span>
+          <span class="word" aria-label="Kids"><span>K</span><span>I</span><span>D</span><span>S</span></span>
+        </h1>
+        <p class="sub">Apprendre, créer, inventer… à ton rythme&nbsp;!</p>
+        <button class="go" data-scroll="#worlds">Choisis ton monde <span aria-hidden="true">↓</span></button>
+      </div>
+
+      <!-- Nova, la mascotte : cliquable -->
+      <div class="mascot-wrap">
+        <p class="speech" id="speech" aria-live="polite">Salut, moi c’est Nova&nbsp;!</p>
+        <button class="mascot" id="mascot" type="button" aria-label="Nova, la mascotte : clique pour un message">
+          <svg viewBox="0 0 200 230" aria-hidden="true">
+            <line x1="100" y1="20" x2="100" y2="48" stroke="#5b4bdb" stroke-width="6" stroke-linecap="round"/>
+            <circle class="antenna" cx="100" cy="16" r="11" fill="#ffd23f"/>
+            <rect x="38" y="44" width="124" height="96" rx="38" fill="#ffffff" stroke="#5b4bdb" stroke-width="6"/>
+            <rect x="56" y="62" width="88" height="58" rx="26" fill="#2b2a6b"/>
+            <g class="eyes"><ellipse cx="82" cy="90" rx="10" ry="12" fill="#5ef0ff"/><ellipse cx="118" cy="90" rx="10" ry="12" fill="#5ef0ff"/></g>
+            <path d="M86 106 q14 10 28 0" stroke="#5ef0ff" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <circle cx="50" cy="100" r="7" fill="#ff8fc2"/><circle cx="150" cy="100" r="7" fill="#ff8fc2"/>
+            <rect x="60" y="146" width="80" height="58" rx="24" fill="#ffffff" stroke="#5b4bdb" stroke-width="6"/>
+            <circle cx="100" cy="174" r="12" fill="#ff6fae"/>
+            <g class="arm-l"><rect x="28" y="152" width="34" height="16" rx="8" fill="#ffd23f" stroke="#5b4bdb" stroke-width="5"/></g>
+            <g class="arm-r"><rect x="138" y="152" width="34" height="16" rx="8" fill="#ffd23f" stroke="#5b4bdb" stroke-width="5"/></g>
+            <rect x="72" y="204" width="20" height="18" rx="7" fill="#5b4bdb"/><rect x="108" y="204" width="20" height="18" rx="7" fill="#5b4bdb"/>
+          </svg>
+        </button>
+        <span class="shadow" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <section class="worlds" id="worlds" aria-labelledby="worldsTitle">
+      <h2 id="worldsTitle">Quel âge as-tu&nbsp;?</h2>
+      <p class="lead">Chaque monde a ses formations, pensées pour ton âge.</p>
+      <div class="world-grid" id="worldGrid" role="list"></div>
+    </section>
+
+    <section class="panel" id="panel" aria-live="polite"></section>
+
+    <section class="parents" aria-labelledby="parentsTitle">
+      <div class="parents-card">
+        <h2 id="parentsTitle">Pour les parents</h2>
+        <ul>
+          <li><b>Espace privé</b> réservé aux enfants des membres ECN Group, accessible depuis votre compte.</li>
+          <li><b>Des formations par âge</b> : dès 8, 10, 12 et 16 ans.</li>
+          <li><b>Accompagnez</b> votre enfant lors de sa première visite.</li>
+        </ul>
+        <a class="parents-back" href="./">Retour à l’espace parent</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">ECN Formation Kids · © 2026 ECN Group</footer>
+
+  <script defer src="kids-data.js"></script>
+  <script defer src="kids.js"></script>
+</body>
+</html>

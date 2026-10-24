@@ -37,6 +37,18 @@ window.ECN_MEMBRE_FORMATIONS = [
 
 Sans `u`, la carte affiche « bientôt disponible ». Les Initiés voient ces formations verrouillées, et un clic leur propose de passer Membre.
 
+## ECN Formation Kids
+
+Espace à part (`public/kids.html`, `kids.css`, `kids.js`), réservé aux enfants des membres et accessible avec la session du parent (même contrôle d'accès que l'accueil). Quatre mondes par âge : dès 8, 10, 12 et 16 ans. On y arrive depuis le menu « ECN Kids », la carte de l'accueil ou le profil. Depuis ecn-group.com, il suffit d'ajouter `&next=kids` au lien d'entrée.
+
+Formations dans `public/kids-data.js`. Un monde sans formation affiche « bientôt ».
+
+```js
+window.ECN_KIDS_FORMATIONS = [
+  { age: 8, t: 'Titre', d: '30 min', img: 'assets/kids/visuel.webp', u: 'https://lien-de-la-formation', desc: 'Résumé court' }
+];
+```
+
 ## Mise en production
 
 1. **Supabase** : exécuter une fois `supabase_formation_2026_10_23.sql`, puis `supabase_formation_compte_2026_10_23.sql` (dans le repo ecn-groups). Sans le second fichier, le site reste accessible, mais l'e-mail du compte formation ne peut pas être enregistré.

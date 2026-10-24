@@ -11,7 +11,7 @@
   <link rel="icon" href="assets/logo-ecn.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Fredoka:wght@600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">
   { "imports": {
@@ -48,6 +48,7 @@
       <button data-view="dashboard" class="is-active">Tableau de bord</button>
       <button data-view="ecn">Formations ECN</button>
       <button data-view="catalogue">Catalogue</button>
+      <a class="nav-kids" href="kids.html">ECN Kids</a>
       <button data-view="favoris">Mes favoris <em id="favCount">0</em></button>
       <button data-view="aide">Aide &amp; support</button>
     </nav>
@@ -80,6 +81,7 @@
         <p id="pmDesc"></p>
       </div>
       <nav class="pm-links" aria-label="Mon compte">
+        <a href="kids.html">Espace ECN Formation Kids <span aria-hidden="true">→</span></a>
         <a href="https://ecn-group.com/dashboard" target="_blank" rel="noopener">Mon espace ECN Group <span aria-hidden="true">↗</span></a>
         <a id="pmUpgrade" href="https://ecn-group.com/dashboard#tab-adhesion" target="_blank" rel="noopener">Faire évoluer mon adhésion <span aria-hidden="true">↗</span></a>
       </nav>
@@ -174,6 +176,20 @@
           <span class="ecn-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 4.5 4L12 4l4.5 7L21 7l-2 12H5z"/></svg>Membre · Cercle Fondateur</span>
         </header>
         <div id="ecnZone"></div>
+      </section>
+
+      <!-- ECN Formation Kids : espace à part pour les enfants des membres -->
+      <section class="block" id="kidsPromo">
+        <a class="kids-promo" href="kids.html">
+          <span class="kp-bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="kp-copy">
+            <span class="kp-tag">Nouveau</span>
+            <span class="kp-title">ECN Formation <em><span>K</span><span>I</span><span>D</span><span>S</span></em></span>
+            <span class="kp-text">L’espace privé des enfants des membres : des formations dès 8, 10, 12 et 16&nbsp;ans.</span>
+          </span>
+          <span class="kp-ages" aria-hidden="true"><b style="--c:#ffb020">8+</b><b style="--c:#2bb3ff">10+</b><b style="--c:#ff5fa2">12+</b><b style="--c:#22c58b">16+</b></span>
+          <span class="kp-cta">Entrer dans l’espace Kids →</span>
+        </a>
       </section>
 
       <section class="block" id="catalog">

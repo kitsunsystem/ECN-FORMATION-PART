@@ -120,16 +120,17 @@ async function callback(env, url) {
   if (!user.formation_linked_at) {
     await sb(env, `users?id=eq.${encodeURIComponent(user.id)}`, { method: 'PATCH', prefer: 'return=minimal', body: { formation_linked_at: new Date().toISOString() } });
   }
-  return redirect('/', { 'Set-Cookie': await sessionCookie(env, user.id) });
+  // next=kids : arrivée directe sur l'espace ECN Formation Kids (seule destination acceptée, pas de redirection ouverte)
+  return redirect(url.searchParams.get('next') === 'kids' ? '/kids' : '/', { 'Set-Cookie': await sessionCookie(env, user.id) });
 }
 
 /** Page de l'espace : profil relu dans la base, puis injecté dans la page (pack, prénom). */
-async function app(request, env, uid) {
+async function app(request, env, uid, pagePath = '/') {
   const user = await member(env, uid);
   const tier = formationTier(user);
   if (!tier) return redirect('/connexion?e=adhesion', { 'Set-Cookie': clearCookie });
   // requête neuve, sans en-têtes conditionnels : jamais de 304 vers une ancienne page sans profil
-  const page = await env.ASSETS.fetch(new Request(new URL('/', request.url), { headers: { Accept: 'text/html' } }));
+  const page = await env.ASSETS.fetch(new Request(new URL(pagePath, request.url), { headers: { Accept: 'text/html' } }));
   const data = JSON.stringify({
     id: user.id, tier, firstName: user.first_name || '', lastName: user.last_name || '', email: user.email || '', memberCode: user.member_code || '',
     lecubeEmail: user.formation_lecube_email || ''
@@ -180,6 +181,7 @@ export default {
       }
       if (path === '/api/lecube-email') return await saveLecubeEmail(request, env, uid);
       if (path === '/' || path === '/index.html') return await app(request, env, uid);
+      if (path === '/kids' || path === '/kids/' || path === '/kids.html') return await app(request, env, uid, '/kids');
       return withHeaders(await env.ASSETS.fetch(request), {});
     } catch (err) {
       console.error('[formation]', err);
