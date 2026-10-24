@@ -11,6 +11,8 @@
  * SESSION_SECRET (secret, 32+ caractères aléatoires), SUPABASE_URL (facultatif).
  */
 
+import { welcomeEmail } from './email.js';
+
 const DEFAULT_SUPABASE_URL = 'https://jwnbsukmgpissvdytbmx.supabase.co';
 const COOKIE = '__Host-ecn_formation';
 const SESSION_TTL_S = 7 * 24 * 3600;
@@ -144,27 +146,51 @@ async function app(request, env, uid, pagePath = '/') {
 const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...SECURITY_HEADERS } });
 
 /** 1re entrée : e-mail du compte de la plateforme de formation partenaire, rattaché au compte ECN (users.formation_lecube_email). */
-async function saveLecubeEmail(request, env, uid) {
+async function saveLecubeEmail(request, env, uid, ctx) {
   if (request.method !== 'POST') return json({ ok: false, error: 'Méthode non autorisée.' }, 405);
   const origin = request.headers.get('Origin');
   if (origin && origin !== new URL(request.url).origin) return json({ ok: false, error: 'Origine non autorisée.' }, 403);
   const body = await request.json().catch(() => ({}));
   const email = String(body.email || '').trim().toLowerCase();
   if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ ok: false, error: 'Adresse e-mail invalide.' }, 400);
-  if (!formationTier(await member(env, uid))) return json({ ok: false, error: 'Votre adhésion ne donne pas accès à l’Espace Formation.' }, 403);
+  const user = await member(env, uid);
+  const tier = formationTier(user);
+  if (!tier) return json({ ok: false, error: 'Votre adhésion ne donne pas accès à l’Espace Formation.' }, 403);
   try {
     await sb(env, `users?id=eq.${encodeURIComponent(uid)}`, { method: 'PATCH', prefer: 'return=minimal', body: { formation_lecube_email: email } });
   } catch (err) {
     console.error('[formation] e-mail formation', err);
     return json({ ok: false, error: 'Enregistrement impossible pour le moment. Réessayez dans quelques instants.' }, 503);
   }
+  // 1re association uniquement (pas à chaque modification) ; en tâche de fond, sans retarder la réponse
+  if (!user.formation_lecube_email && user.email) ctx.waitUntil(sendWelcome(env, user, tier, email));
   return json({ ok: true, email });
+}
+
+/** E-mail de bienvenue via Brevo, même expéditeur que ecn-group.com. Une erreur d'envoi ne bloque jamais l'espace. */
+async function sendWelcome(env, user, tier, formationEmail) {
+  if (!env.BREVO_API_KEY) { console.warn('[formation] BREVO_API_KEY absente : e-mail de bienvenue non envoyé'); return; }
+  const mail = welcomeEmail({ firstName: user.first_name, lastName: user.last_name, memberCode: user.member_code, tier, formationEmail });
+  try {
+    const res = await fetch(`${String(env.BREVO_API_URL || 'https://api.brevo.com/v3').replace(/\/+$/, '')}/smtp/email`, {
+      method: 'POST',
+      headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        sender: { name: 'ECN Group', email: 'noreply@ecn-group.com' },
+        to: [{ email: user.email, name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email }],
+        subject: mail.subject, htmlContent: mail.html, textContent: mail.text, tags: ['formation-bienvenue']
+      })
+    });
+    if (!res.ok) console.warn('[formation] Brevo', res.status, await res.text().catch(() => ''));
+  } catch (err) {
+    console.warn('[formation] e-mail de bienvenue', err);
+  }
 }
 
 const wantsPage = (request, path) => path === '/' || path.endsWith('.html') || (request.headers.get('Accept') || '').includes('text/html');
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     try {
@@ -179,7 +205,7 @@ export default {
           ? (configured(env) ? redirect('/connexion') : configRedirect(env))
           : new Response('Accès réservé aux membres ECN Group.', { status: 401, headers: SECURITY_HEADERS });
       }
-      if (path === '/api/lecube-email') return await saveLecubeEmail(request, env, uid);
+      if (path === '/api/lecube-email') return await saveLecubeEmail(request, env, uid, ctx);
       if (path === '/' || path === '/index.html') return await app(request, env, uid);
       if (path === '/kids' || path === '/kids/' || path === '/kids.html') return await app(request, env, uid, '/kids');
       return withHeaders(await env.ASSETS.fetch(request), {});

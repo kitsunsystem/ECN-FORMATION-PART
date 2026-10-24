@@ -11,6 +11,8 @@ Aucune page, feuille de style ni donnée n'est servie sans session (le Worker `s
 3. Le membre arrive sur `/auth/callback?t=…`. Le Worker consomme le ticket dans la base, enregistre `users.formation_linked_at` (compte lié) et ouvre une session par cookie signé (`HttpOnly`, `Secure`, 7 jours).
 4. À chaque chargement de page, le pack est **relu dans la base** : une adhésion suspendue ou expirée coupe l'accès aussitôt.
 
+**E-mail de bienvenue** (`src/email.js`) : envoyé une seule fois, à l'adresse du compte ECN, à la première association du compte formation. Il présente la formule du membre, les Formations ECN Initié et ECN Membre, ECN Formation Kids et un bouton vers l'Espace Formation. Les images sont hébergées sur ecn-group.com (`assets/email/`).
+
 **Première entrée** : tant que le membre n'a pas associé son compte formation, un écran l'invite à créer ce compte via le lien d'inscription partenaire, puis à saisir l'e-mail utilisé. Le Worker l'enregistre dans `users.formation_lecube_email` (`POST /api/lecube-email`), et cet e-mail s'affiche dans le profil, en haut à droite. Il est modifiable depuis le profil.
 
 Sans session, le visiteur voit `/connexion`. Le bouton « Se connecter avec ECN Group » le ramène ici après sa connexion sur ecn-group.com.
@@ -56,6 +58,7 @@ window.ECN_KIDS_FORMATIONS = [
    - `SUPABASE_SERVICE_ROLE_KEY` (secret) : la même clé service que ecn-group.com
    - `SESSION_SECRET` (secret) : 32 caractères aléatoires ou plus, par exemple le résultat de `openssl rand -base64 48`
    - `SUPABASE_URL` (facultatif) : par défaut, le projet ECN actuel
+   - `BREVO_API_KEY` (secret) : la même clé Brevo que ecn-group.com. Elle sert à envoyer l'e-mail de bienvenue depuis noreply@ecn-group.com quand le membre associe son compte formation pour la première fois. Sans elle, l'espace fonctionne mais aucun e-mail ne part.
 3. **Domaine** : brancher ecn-group-formation.com sur le Worker (Settings → Domains & Routes).
 4. **ecn-group.com (Pages)** : `FORMATION_URL` est facultatif (par défaut `https://ecn-group-formation.com`). À renseigner seulement si l'espace change de domaine.
 

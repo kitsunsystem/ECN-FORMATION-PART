@@ -598,7 +598,7 @@
     const first = MEMBER.firstName || 'Membre', full = `${MEMBER.firstName} ${MEMBER.lastName}`.trim() || first;
     $('#heroName').textContent = first;
     $('#passHolder').textContent = full;
-    $('#passNum').textContent = MEMBER.memberCode ? `ECN · ${MEMBER.memberCode}` : 'ECN Group';
+    $('#passNum').textContent = MEMBER.memberCode || 'ECN Group';
     $('#avatarInitials').textContent = $('#pmInitials').textContent = ((MEMBER.firstName || ' ')[0] + (MEMBER.lastName || ' ')[0]).trim().toUpperCase() || 'EC';
     $('#avatar').title = `${full} · Mon profil ECN`;
     $('#pmName').textContent = full;
